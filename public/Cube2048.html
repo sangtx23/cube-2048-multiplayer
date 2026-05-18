@@ -1,0 +1,647 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>2048 Cube - King Arena Ultra Max</title>
+    <style>
+        body { margin: 0; overflow: hidden; background-color: #050505; font-family: sans-serif; touch-action: none; user-select: none; }
+        canvas { display: block; }
+        #start-screen {
+            position: absolute; inset: 0; background: #0f172a;
+            display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 100;
+        }
+        #name-input { padding: 12px; font-size: 18px; border-radius: 25px; border: 2px solid #fbbf24; width: 220px; text-align: center; margin-bottom: 15px; outline: none; }
+        #start-btn { padding: 12px 50px; font-size: 18px; background: #fbbf24; color: #000; border: none; border-radius: 25px; cursor: pointer; font-weight: bold; }
+        #ui { position: absolute; top: 20px; left: 20px; color: white; pointer-events: none; z-index: 10; display: none; font-size: 16px; text-shadow: 1px 1px 2px black; }
+        #leaderboard {
+            position: absolute; top: 20px; right: 20px; background: rgba(0, 0, 0, 0.75);
+            padding: 12px; border-radius: 10px; color: white; min-width: 180px; z-index: 10;
+            display: none; border: 1px solid #fbbf24; box-shadow: 0 0 10px rgba(251, 191, 36, 0.3);
+        }
+        .lb-item { display: flex; justify-content: space-between; font-size: 14px; margin: 6px 0; }
+        .lb-you { color: #fde047; font-weight: bold; }
+        #highscore-ui { margin-top: 15px; color: #94a3b8; font-size: 14px; }
+    </style>
+</head>
+<body>
+
+    <div id="start-screen">
+        <h1 style="color:white; margin-bottom:10px; letter-spacing: 2px;">2048 CUBE ARENA</h1>
+        <div id="highscore-ui">Kỷ lục của bạn: <span id="high-val" style="color:#fbbf24; font-weight:bold;">0</span></div>
+        <input type="text" id="name-input" placeholder="Nhập tên..." maxlength="10" style="margin-top:20px;">
+        <button id="start-btn">BẮT ĐẦU</button>
+    </div>
+
+    <div id="ui">
+        <b id="p-name">Bạn:</b> <span id="chain-text">2</span><br>
+        <div style="margin-top: 5px; font-size: 12px; color: #67e8f9;">Giữ chuột/chạm màn hình để Tăng Tốc (Dash tiêu hao chuỗi đuôi)</div>
+    </div>
+
+    <div id="leaderboard">
+        <h4 style="margin:0 0 10px 0; text-align:center; color: #fbbf24;">TOP 5 ARENA</h4>
+        <div id="lb-content"></div>
+    </div>
+
+    <canvas id="gameCanvas"></canvas>
+
+    <script>
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        const startScreen = document.getElementById('start-screen');
+        const nameInput = document.getElementById('name-input');
+        const startBtn = document.getElementById('start-btn');
+        const lbContent = document.getElementById('lb-content');
+        
+        let width, height, gameRunning = false;
+        let players = [], cubes = [], items = [], particles = [], floatingTexts = [], lightRays = [];
+        let topPlayerName = "";
+        let isMouseDown = false;
+        let screenShakeTime = 0;
+        let rainbowHue = 0;
+
+        const colors = { 
+            2: '#ef4444', 4: '#22c55e', 8: '#3b82f6', 16: '#06b6d4', 32: '#14b8a6', 
+            64: '#f59e0b', 128: '#f97316', 256: '#eab308', 512: '#a855f7', 1024: '#db2777', 2048: '#ec4899'
+        };
+
+        let currentHighScore = localStorage.getItem('cube2048_highscore') || 0;
+        document.getElementById('high-val').innerText = formatNumber(currentHighScore);
+
+        function formatNumber(num) {
+            if (num < 1024) return num;
+            if (num < 1048576) {
+                let val = num / 1024;
+                return (val % 1 === 0 ? val : val.toFixed(1)) + "K";
+            }
+            if (num < 1073741824) {
+                let val = num / 1048576;
+                return (val % 1 === 0 ? val : val.toFixed(1)) + "M";
+            }
+            let val = num / 1073741824;
+            return (val % 1 === 0 ? val : val.toFixed(1)) + "B";
+        }
+
+        function resize() {
+            width = window.innerWidth; height = window.innerHeight;
+            canvas.width = width; canvas.height = height;
+        }
+        window.addEventListener('resize', resize);
+        resize();
+
+        function spawnCube(x, y, val) {
+            const vals = [2, 4, 8, 16];
+            cubes.push({ 
+                x: x || Math.random() * (width - 60) + 30, 
+                y: y || Math.random() * (height - 60) + 30, 
+                value: val || vals[Math.floor(Math.random()*vals.length)] 
+            });
+        }
+
+        function spawnItem(type) {
+            items.push({ x: Math.random() * (width - 100) + 50, y: Math.random() * (height - 100) + 50, type: type });
+        }
+
+        function addFloatingText(x, y, text, color = '#fff') {
+            floatingTexts.push({ x, y, text, color, alpha: 1, vy: -1.5 });
+        }
+
+        function spawnLightRays(x, y, color) {
+            const rayCount = 6;
+            const baseAngle = Math.random() * Math.PI;
+            for (let i = 0; i < rayCount; i++) {
+                let angle = baseAngle + (i * (Math.PI * 2 / rayCount));
+                lightRays.push({
+                    x: x, y: y, angle: angle, length: 10,
+                    maxLength: Math.random() * 40 + 35,
+                    speed: Math.random() * 3 + 4,
+                    width: 4, alpha: 1, color: color
+                });
+            }
+        }
+
+        function triggerScreenShake(duration) {
+            screenShakeTime = duration;
+        }
+
+        function smartMerge(player, newValue, type = "add") {
+            let values = player.body.map(b => b.value);
+            let baseScales = player.body.map(b => b.baseScale || 1);
+            let pulseScales = player.body.map(b => b.pulseScale || 1);
+
+            if (type === "add") { 
+                values.push(newValue); 
+                baseScales.push(1);
+                pulseScales.push(1);
+                if(player.isHuman) addFloatingText(player.body[0].x, player.body[0].y - 30, `+${formatNumber(newValue)}`, '#22c55e');
+            }
+            else if (type === "double") { 
+                values[0] *= 2; baseScales[0] += 0.15; 
+                pulseScales[0] = 1.6;
+                spawnLightRays(player.body[0].x, player.body[0].y, colors[values[0]] || '#fff');
+                if(player.isHuman) addFloatingText(player.body[0].x, player.body[0].y - 30, `X2 Tăng Trưởng!`, '#fbbf24');
+            }
+            else if (type === "divide") { 
+                values[0] = Math.max(2, Math.floor(values[0] / 2)); baseScales[0] = Math.max(1, baseScales[0] - 0.1); 
+                if(player.isHuman) addFloatingText(player.body[0].x, player.body[0].y - 30, `/2 Suy Giảm!`, '#94a3b8');
+            }
+
+            let hasMerged = true;
+            while (hasMerged) {
+                hasMerged = false;
+                values.sort((a, b) => b - a);
+                for (let i = 0; i < values.length - 1; i++) {
+                    if (values[i] === values[i+1] && values[i] > 0) {
+                        values[i] *= 2;
+                        baseScales[i] = (baseScales[i] || 1) + 0.12;
+                        pulseScales[i] = 1.5;
+                        let targetNode = player.body[i] || player.body[0];
+                        spawnLightRays(targetNode.x, targetNode.y, colors[values[i]] || '#fff');
+
+                        values.splice(i+1, 1); 
+                        baseScales.splice(i+1, 1);
+                        pulseScales.splice(i+1, 1);
+                        hasMerged = true;
+                        
+                        if(player.isHuman) {
+                            addFloatingText(player.body[0].x, player.body[0].y - 50, `Gộp ${formatNumber(values[i])}!`, '#f43f5e');
+                            triggerScreenShake(8);
+                        }
+                        break;
+                    }
+                }
+            }
+            while (player.body.length < values.length) {
+                let last = player.body[player.body.length-1] || player.body[0];
+                player.body.push({ x: last.x, y: last.y, value: 2, baseScale: 1, pulseScale: 1 });
+            }
+            while (player.body.length > values.length) player.body.pop();
+            
+            values.forEach((v, i) => { 
+                player.body[i].value = v; 
+                player.body[i].baseScale = baseScales[i] || 1; 
+                player.body[i].pulseScale = pulseScales[i] || 1;
+            });
+            
+            if(player.isHuman) {
+                document.getElementById('chain-text').innerText = values.map(formatNumber).join(' - ');
+                if(values[0] > currentHighScore) {
+                    currentHighScore = values[0];
+                    localStorage.setItem('cube2048_highscore', currentHighScore);
+                    document.getElementById('high-val').innerText = formatNumber(currentHighScore);
+                }
+            }
+        }
+
+        function update() {
+            if(!gameRunning) return;
+
+            rainbowHue = (rainbowHue + 1.5) % 360;
+            if(screenShakeTime > 0) screenShakeTime--;
+
+            // 1. CẬP NHẬT ĐỘNG LỰC HỌC VÀ DI CHUYỂN
+            players.forEach(p => {
+                if(!p.alive) return;
+                let head = p.body[0];
+
+                if(p.speedBuffTimer > 0) p.speedBuffTimer--;
+
+                let wantsToDash = p.isHuman ? isMouseDown : p.botDashActive;
+                let speedFactor = 1.0;
+
+                if (p.speedBuffTimer > 0) {
+                    speedFactor = 2.2;
+                } else if (wantsToDash && p.body.length > 1) {
+                    speedFactor = 2.0;
+                    p.dashFrameCounter++;
+
+                    if(p.dashFrameCounter % 30 === 0) {
+                        let dropped = p.body.pop();
+                        spawnCube(dropped.x + (Math.random()-0.5)*40, dropped.y + (Math.random()-0.5)*40, dropped.value);
+                        smartMerge(p, 0, "none");
+                        if (p.isHuman) addFloatingText(head.x, head.y + 20, "- Đuôi", '#ef4444');
+                    }
+                } else {
+                    p.dashFrameCounter = 0;
+                }
+
+                let s = p.baseSpeed * speedFactor * (p.burnTimer > 0 ? 0.5 : 1);
+                
+                if(p.burnTimer > 0) {
+                    p.burnTimer--;
+                    for(let i=0; i<2; i++) particles.push({x: head.x, y: head.y, vx: (Math.random()-0.5)*6, vy: (Math.random()-0.5)*6, life: 1, size: Math.random()*10+4, color: '#ffae00'});
+                }
+                
+                // AI NÂNG CẤP CHO BOT (Tránh lỗi xoay 1 chỗ khi khoảng cách quá gần)
+                if(!p.isHuman) {
+                    let targetX = null, targetY = null;
+                    let closestDist = 9999;
+                    let dangerX = 0, dangerY = 0, hasDanger = false;
+
+                    players.forEach(other => {
+                        if(p === other || !other.alive) return;
+                        let oHead = other.body[0];
+                        let d = Math.hypot(head.x - oHead.x, head.y - oHead.y);
+                        if(d < 180 && oHead.value > head.value) {
+                            dangerX += (head.x - oHead.x); dangerY += (head.y - oHead.y);
+                            hasDanger = true;
+                        }
+                    });
+
+                    if(hasDanger) {
+                        p.angle = Math.atan2(dangerY, dangerX);
+                        if(Math.random() < 0.05 && p.body.length > 2) p.botDashActive = true;
+                    } else {
+                        cubes.forEach(c => {
+                            let d = Math.hypot(head.x - c.x, head.y - c.y);
+                            if(d < closestDist && d > 5) { closestDist = d; targetX = c.x; targetY = c.y; }
+                        });
+                        items.forEach(it => {
+                            let d = Math.hypot(head.x - it.x, head.y - it.y);
+                            if(d < closestDist && d > 5) { closestDist = d; targetX = it.x; targetY = it.y; }
+                        });
+                        players.forEach(other => {
+                            if(p === other || !other.alive) return;
+                            let oHead = other.body[0];
+                            let d = Math.hypot(head.x - oHead.x, head.y - oHead.y);
+                            if(d < closestDist && oHead.value < head.value && d > 5) {
+                                closestDist = d; targetX = oHead.x; targetY = oHead.y;
+                                if(d < 200 && Math.random() < 0.03 && p.body.length > 2) p.botDashActive = true;
+                            }
+                        });
+
+                        if(p.body.length <= 1 || Math.random() < 0.02) p.botDashActive = false;
+
+                        if(targetX !== null) {
+                            let targetAngle = Math.atan2(targetY - head.y, targetX - head.x);
+                            let diff = targetAngle - p.angle;
+                            while (diff < -Math.PI) diff += Math.PI * 2;
+                            while (diff > Math.PI) diff -= Math.PI * 2;
+                            p.angle += diff * 0.12;
+                        } else if (Math.random() < 0.02) {
+                            p.angle += (Math.random() - 0.5) * 1.5;
+                        }
+                    }
+                }
+                
+                let nextX = head.x + Math.cos(p.angle) * s;
+                let nextY = head.y + Math.sin(p.angle) * s;
+                const margin = 20 * (head.baseScale || 1);
+        
+                if (nextX < margin || nextX > width - margin) p.angle = Math.PI - p.angle; else head.x = nextX;
+                if (nextY < margin || nextY > height - margin) p.angle = -p.angle; else head.y = nextY;
+
+                for(let i=1; i<p.body.length; i++) {
+                    let b = p.body[i], prev = p.body[i-1];
+                    let d = 26 + ((prev.baseScale || 1) * 6);
+                    let targetX = prev.x - Math.cos(Math.atan2(prev.y-b.y, prev.x-b.x))*d;
+                    let targetY = prev.y - Math.sin(Math.atan2(prev.y-b.y, prev.x-b.x))*d;
+                    b.x += (targetX - b.x) * 0.35;
+                    b.y += (targetY - b.y) * 0.35;
+                    if(b.pulseScale > 1) b.pulseScale -= 0.04;
+                }
+                if(head.pulseScale > 1) head.pulseScale -= 0.04;
+            });
+
+            // 2. LOGIC XỬ LÝ VA CHẠM KHỐI SỐ (CUBES) & VẬT PHẨM (ITEMS)
+            players.forEach(p => {
+                if(!p.alive) return;
+                let head = p.body[0];
+                let headSize = 42 * (head.baseScale || 1);
+
+                // Va chạm ăn khối số tự do
+                for (let i = cubes.length - 1; i >= 0; i--) {
+                    let c = cubes[i];
+                    let dist = Math.hypot(head.x - c.x, head.y - c.y);
+                    let hitRadius = (headSize / 2) + 16; // Bán kính va chạm tương đối
+                    
+                    if (dist < hitRadius) {
+                        smartMerge(p, c.value, "add");
+                        cubes.splice(i, 1);
+                        spawnCube(); // Tái tạo khối mới trên bản đồ
+                    }
+                }
+
+                // Va chạm nhặt item đặc biệt
+                for (let i = items.length - 1; i >= 0; i--) {
+                    let it = items[i];
+                    let dist = Math.hypot(head.x - it.x, head.y - it.y);
+                    let hitRadius = (headSize / 2) + 25;
+
+                    if (dist < hitRadius) {
+                        if (it.type === 'x2') smartMerge(p, 0, "double");
+                        if (it.type === '/2') smartMerge(p, 0, "divide");
+                        if (it.type === 'speed') {
+                            p.speedBuffTimer = 360; // 6 giây tăng tốc (60fps * 6)
+                            if(p.isHuman) addFloatingText(head.x, head.y - 30, "Tốc Độ Siêu Hạng!", "#00ffff");
+                        }
+                        if (it.type === 'bomb') {
+                            triggerScreenShake(15);
+                            if(p.body.length > 1) {
+                                let lostCount = Math.ceil(p.body.length / 2);
+                                for(let k=0; k<lostCount; k++) {
+                                    let b = p.body.pop();
+                                    if(b) spawnCube(b.x + (Math.random()-0.5)*60, b.y + (Math.random()-0.5)*60, b.value);
+                                }
+                                smartMerge(p, 0, "none");
+                            }
+                            if(p.isHuman) addFloatingText(head.x, head.y - 30, "Bị Trúng Bom! -50% Thân", "#ef4444");
+                        }
+                        items.splice(i, 1);
+                    }
+                }
+            });
+
+           
+// 3. LOGIC VA CHẠM ĐẤU TRƯỜNG: CÁ LỚN NUỐT CÁ BÉ (CUBE LỚN ĂN CUBE NHỎ KHI CHẠM)
+players.forEach(p => {
+    if (!p.alive) return;
+    let head = p.body[0];
+    let headSize = 42 * (head.baseScale || 1);
+
+    players.forEach(other => {
+        if (p === other || !other.alive) return;
+
+        let otherHead = other.body[0];
+        let otherHeadSize = 42 * (otherHead.baseScale || 1);
+
+        // ĐIỀU KIỆN: Người chơi 'p' phải LỚN HƠN 'other' thì mới có quyền ăn
+        if (head.value > otherHead.value) {
+            
+            // Trường hợp 1: Đầu của 'p' chạm trực diện vào Đầu của 'other'
+            let distHead = Math.hypot(head.x - otherHead.x, head.y - otherHead.y);
+            if (distHead < (headSize / 2 + otherHeadSize / 2) - 3) {
+                handleKill(p, other, true); // 'p' nuốt chửng 'other' trực diện
+                return;
+            }
+
+            // Trường hợp 2: Đầu của 'p' chạm vào các đốt THÂN/ĐUÔI của 'other'
+            for (let i = 1; i < other.body.length; i++) {
+                let node = other.body[i];
+                let nodeSize = 42 * (node.baseScale || 1);
+                let distBody = Math.hypot(head.x - node.x, head.y - node.y);
+
+                if (distBody < (headSize / 2 + nodeSize / 2) - 5) {
+                    handleKill(p, other, false); // 'p' cắt đuôi hoặc nuốt chửng 'other' từ phía sau
+                    break;
+                }
+            }
+        }
+    });
+});
+
+// Hàm xử lý hủy diệt khi Cube lớn nuốt Cube nhỏ
+function handleKill(killer, victim, isHeadToHead) {
+    victim.alive = false;
+    triggerScreenShake(25);
+    
+    if (isHeadToHead) {
+        // Nuốt trực diện: Cộng trực tiếp giá trị Khối Đầu của kẻ thua vào chuỗi của kẻ thắng
+        smartMerge(killer, victim.body[0].value, "add");
+        
+        // Các đốt thân còn lại của kẻ thua biến thành cube tự do văng ra sàn
+        for (let i = 1; i < victim.body.length; i++) {
+            spawnCube(victim.body[i].x + (Math.random()-0.5)*40, victim.body[i].y + (Math.random()-0.5)*40, victim.body[i].value);
+        }
+    } else {
+        // Nuốt từ thân/đuôi: Thưởng điểm khối đầu lớn nhất cho killer
+        smartMerge(killer, victim.body[0].value, "add");
+        
+        // Toàn bộ các khối thân còn lại của victim rơi ra ngoài làm thức ăn
+        victim.body.forEach((node, idx) => {
+            if(idx > 0) {
+                spawnCube(node.x + (Math.random()-0.5)*50, node.y + (Math.random()-0.5)*50, node.value);
+            }
+        });
+    }
+
+    // Hiển thị text thông báo hiệu ứng bay lên
+    if (killer.isHuman) addFloatingText(killer.body[0].x, killer.body[0].y - 50, `Đã nuốt chửng ${victim.name}!`, '#fbbf24');
+    
+    if (victim.isHuman) {
+        addFloatingText(width / 2, height / 2 - 50, "BẠN ĐÃ BỊ CUBE LỚN HƠN NUỐT CHỬNG!", '#ef4444');
+        setTimeout(() => {
+            gameRunning = false;
+            startScreen.style.display = 'flex';
+            document.getElementById('high-val').innerText = formatNumber(currentHighScore);
+        }, 2500);
+    } else {
+        // Hồi sinh Bot sau 4 giây tại vị trí ngẫu nhiên mới trên Arena
+        setTimeout(() => {
+            if (!gameRunning) return;
+            victim.alive = true;
+            victim.body = [{ x: Math.random() * width, y: Math.random() * height, value: 2, baseScale: 1, pulseScale: 1 }];
+            victim.angle = Math.random() * Math.PI * 2;
+            victim.botDashActive = false;
+        }, 4000);
+    }
+}
+            
+            updateLeaderboard();
+        }
+
+        function updateLeaderboard() {
+            let sorted = [...players].filter(p => p.alive).sort((a,b) => b.body[0].value - a.body[0].value);
+            if(sorted.length > 0) topPlayerName = sorted[0].name;
+            lbContent.innerHTML = sorted.slice(0, 5).map((p, i) => `<div class="lb-item ${p.isHuman?'lb-you':''}"><span>${i+1}. ${p.name} ${i===0?'👑':''}</span><span>${formatNumber(p.body[0].value)}</span></div>`).join('');
+        }
+
+        function drawCube(node, isHead, name, type, fullPlayerObj) {
+            let baseSize = type === 'bomb' ? 35 : ((type === 'x2' || type === '/2' || type === 'speed') ? 35 : 42);
+            let currentPulse = node.pulseScale || 1;
+            let size = baseSize * (node.baseScale || 1) * currentPulse;
+            
+            ctx.save(); 
+            ctx.translate(node.x, node.y);
+
+            let isTop1Head = isHead && (name === topPlayerName);
+
+            if(isTop1Head) {
+                ctx.shadowBlur = 25; ctx.shadowColor = `hsla(${rainbowHue}, 100%, 60%, 1)`;
+            } else if(type === 'bomb') { 
+                ctx.shadowBlur = 25; ctx.shadowColor = "red"; 
+            } else if(type === 'speed') {
+                ctx.shadowBlur = 25; ctx.shadowColor = "#00ffff"; 
+            } else {
+                ctx.shadowBlur = 4; ctx.shadowColor = "rgba(0,0,0,0.5)";
+            }
+
+            ctx.beginPath(); 
+            ctx.roundRect(-size/2, -size/2, size, size, 8);
+            
+            if(isTop1Head) {
+                let grad = ctx.createLinearGradient(-size/2, -size/2, size/2, size/2);
+                grad.addColorStop(0, `hsl(${rainbowHue}, 100%, 65%)`);
+                grad.addColorStop(0.5, `hsl(${(rainbowHue + 120) % 360}, 100%, 70%)`);
+                grad.addColorStop(1, `hsl(${(rainbowHue + 240) % 360}, 100%, 60%)`);
+                ctx.fillStyle = grad;
+            } else if(type === 'bomb') {
+                ctx.fillStyle = '#111';
+            } else if(type === 'speed') {
+                ctx.fillStyle = '#06b6d4'; 
+            } else if(type === 'x2') {
+                ctx.fillStyle = '#fbbf24';
+            } else if(type === '/2') {
+                ctx.fillStyle = '#94a3b8';
+            } else {
+                ctx.fillStyle = colors[node.value] || '#333';
+            }
+            ctx.fill();
+
+            if(isTop1Head) {
+                ctx.strokeStyle = 'rgba(255, 255, 255, 0.6)'; ctx.lineWidth = 3; ctx.stroke();
+                ctx.beginPath(); ctx.fillStyle = 'rgba(255, 255, 255, 0.25)'; ctx.moveTo(-size/2, -size/2); ctx.lineTo(size/2, -size/2); ctx.lineTo(-size/4, size/4); ctx.closePath(); ctx.fill();
+            }
+
+            ctx.fillStyle = isTop1Head ? '#000' : (type === 'bomb' ? 'red' : ((type==='x2'||type==='/2'||type==='speed') ? 'black' : 'white'));
+            ctx.font = `bold ${type === 'bomb' ? 22 : 14 * (node.baseScale || 1) * currentPulse}px Arial`;
+            ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+            
+            let txt = formatNumber(node.value) || "";
+            if(type === 'x2') txt = "X2";
+            if(type === '/2') txt = "/2"; 
+            if(type === 'bomb') txt = "💣";
+            if(type === 'speed') txt = "⚡";
+            ctx.fillText(txt, 0, 0);
+
+            if(isHead && fullPlayerObj) { 
+                let currentYOffset = -size / 1.1; 
+
+                ctx.fillStyle = isTop1Head ? `hsl(${rainbowHue}, 100%, 75%)` : 'white';
+                ctx.font = isTop1Head ? 'bold 13px Arial' : '12px Arial'; 
+                ctx.fillText(name, 0, currentYOffset); 
+                
+                if(isTop1Head) { 
+                    currentYOffset -= 12; 
+                    ctx.save();
+                    ctx.fillStyle = "#fde047"; ctx.shadowBlur = 8; ctx.shadowColor = "#fbbf24";
+                    ctx.beginPath(); 
+                    ctx.moveTo(-size/3, currentYOffset); ctx.lineTo(-size/2, currentYOffset - size*0.4); 
+                    ctx.lineTo(-size/6, currentYOffset - size*0.1); ctx.lineTo(0, currentYOffset - size*0.5); 
+                    ctx.lineTo(size/6, currentYOffset - size*0.1); ctx.lineTo(size/2, currentYOffset - size*0.4); 
+                    ctx.lineTo(size/3, currentYOffset); ctx.fill();
+                    ctx.restore();
+                    currentYOffset -= (size * 0.4); 
+                }
+
+                if(fullPlayerObj.speedBuffTimer > 0) {
+                    currentYOffset -= 15; 
+                    let timeLeftSeconds = (fullPlayerObj.speedBuffTimer / 60).toFixed(1);
+                    ctx.save();
+                    ctx.fillStyle = "#00ffff"; ctx.font = "bold 13px Arial"; ctx.shadowBlur = 6; ctx.shadowColor = "#00ffff";
+                    ctx.fillText(`⚡ ${timeLeftSeconds}s`, 0, currentYOffset);
+                    ctx.restore();
+                }
+            }
+            ctx.restore();
+        }
+
+        function drawLightRays() {
+            ctx.save();
+            lightRays.forEach(r => {
+                ctx.save();
+                ctx.globalAlpha = r.alpha;
+                ctx.strokeStyle = r.color;
+                ctx.lineWidth = r.width;
+                ctx.lineCap = 'round';
+                ctx.shadowBlur = 10;
+                ctx.shadowColor = r.color;
+                
+                ctx.beginPath();
+                let startX = r.x + Math.cos(r.angle) * (r.length * 0.4);
+                let startY = r.y + Math.sin(r.angle) * (r.length * 0.4);
+                let endX = r.x + Math.cos(r.angle) * r.length;
+                let endY = r.y + Math.sin(r.angle) * r.length;
+                
+                ctx.moveTo(startX, startY);
+                ctx.lineTo(endX, endY);
+                ctx.stroke();
+                ctx.restore();
+            });
+            ctx.restore();
+        }
+
+        function animate() {
+            if(!gameRunning) return;
+
+            ctx.save();
+            if (screenShakeTime > 0) {
+                ctx.translate((Math.random() - 0.5) * 7, (Math.random() - 0.5) * 7);
+            }
+
+            ctx.fillStyle = '#050505'; ctx.fillRect(0,0,width,height);
+            
+            drawLightRays();
+
+            particles.forEach(p => { ctx.globalAlpha = p.life; ctx.fillStyle = p.color; ctx.beginPath(); ctx.arc(p.x, p.y, p.size * p.life, 0, 7); ctx.fill(); });
+            ctx.globalAlpha = 1;
+            
+            cubes.forEach(c => drawCube({x: c.x, y: c.y, value: c.value, baseScale: 0.8, pulseScale: 1}, false));
+            items.forEach(it => drawCube({x: it.x, y: it.y, value: 0, baseScale: 1, pulseScale: 1}, false, "", it.type));
+            
+            players.forEach(p => { 
+                if(p.alive) {
+                    for(let i = p.body.length-1; i >= 0; i--) {
+                        drawCube(p.body[i], i === 0, p.name, null, p); 
+                    }
+                }
+            });
+
+            floatingTexts.forEach(t => {
+                ctx.save(); ctx.globalAlpha = t.alpha; ctx.fillStyle = t.color;
+                ctx.font = 'bold 15px Arial'; ctx.textAlign = 'center';
+                ctx.fillText(t.text, t.x, t.y); ctx.restore();
+            });
+
+            ctx.restore();
+            update(); 
+            requestAnimationFrame(animate);
+        }
+
+        startBtn.onclick = () => {
+            const name = nameInput.value.trim() || "Player";
+            startScreen.style.display = 'none';
+            document.getElementById('ui').style.display = 'block';
+            document.getElementById('leaderboard').style.display = 'block';
+            document.getElementById('p-name').innerText = name + ":";
+            
+            players = [{ name: name, isHuman: true, body: [{ x: width/2, y: height/2, value: 2, baseScale: 1, pulseScale: 1 }], angle: 0, baseSpeed: 2.6, dashFrameCounter: 0, speedBuffTimer: 0, burnTimer: 0, alive: true }];
+            
+            for(let i=1; i<=7; i++) {
+                players.push({ name: "Bot_"+i, isHuman: false, body: [{ x: Math.random()*width, y: Math.random()*height, value: 2, baseScale: 1, pulseScale: 1 }], angle: Math.random()*Math.PI*2, baseSpeed: 1.5, dashFrameCounter: 0, speedBuffTimer: 0, botDashActive: false, burnTimer: 0, alive: true });
+            }
+            
+            cubes = [];
+            items = [];
+            for(let i=0; i<35; i++) spawnCube();
+            
+            // Xóa bớt các chu kỳ dồn dập tránh sinh quá nhiều vật phẩm lỗi
+            if(window.gameIntervals) window.gameIntervals.forEach(clearInterval);
+            window.gameIntervals = [
+                setInterval(() => { if(gameRunning) spawnItem('x2') }, 16000),
+                setInterval(() => { if(gameRunning) spawnItem('/2') }, 11000),
+                setInterval(() => { if(gameRunning) spawnItem('bomb') }, 14000),
+                setInterval(() => { if(gameRunning) spawnItem('speed') }, 19000)
+            ];
+
+            gameRunning = true;
+            animate();
+        };
+
+        const moveInput = (e) => {
+            if(!gameRunning || players.length === 0) return;
+            const x = e.touches ? e.touches[0].clientX : e.clientX;
+            const y = e.touches ? e.touches[0].clientY : e.clientY;
+            const p = players[0];
+            if(p && p.alive) p.angle = Math.atan2(y - p.body[0].y, x - p.body[0].x);
+        };
+        window.addEventListener('mousemove', moveInput);
+        window.addEventListener('touchmove', (e) => { if(gameRunning) e.preventDefault(); moveInput(e); }, {passive:false});
+        
+        window.addEventListener('mousedown', () => { isMouseDown = true; });
+        window.addEventListener('mouseup', () => { isMouseDown = false; });
+        window.addEventListener('touchstart', () => { isMouseDown = true; });
+        window.addEventListener('touchend', () => { isMouseDown = false; });
+    </script>
+</body>
+</html>
