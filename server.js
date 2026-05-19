@@ -221,7 +221,7 @@ setInterval(() => {
 
         let baseStep = 2.86 * speedFactor;
 
-        // KIỂM TRA ĐIỀU KIỆN TĂNG TỐC COOLDOWN 20S (KHÔNG ĐỨT ĐUÔI)
+        // Xử lý vận tốc tăng tốc phía server
         if (p.isMouseDown && p.body.length > 1) {
             if (p.lastDashTime === undefined) p.lastDashTime = 0;
             if (currentTime - p.lastDashTime >= 20000) {
@@ -230,7 +230,7 @@ setInterval(() => {
             if (currentTime - p.lastDashTime < 2000) {
                 baseStep *= 1.65;
             } else {
-                p.isMouseDown = false; // Tự động ngắt sau 2 giây lướt
+                p.isMouseDown = false; 
             }
         }
 
