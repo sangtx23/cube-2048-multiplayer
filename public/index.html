@@ -58,7 +58,6 @@
         }
         window.addEventListener('resize', resize);
 
-        // Khởi tạo hệ thống Âm thanh an toàn để không bị crash khi nhấn nút Start
         const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
         function playBeep(freq, duration) {
             try {
@@ -76,11 +75,9 @@
 
         let gameRunning = false;
         let myAngle = 0;
-        let isMouseDown = false;
         
-        // Quản lý trạng thái kích hoạt Click đúp (Double tap / Double click)
         let lastClientDashTime = 0; 
-        let lastTapTime = 0; // Biến tạm tính khoảng cách giữa 2 lần click/tap liên tiếp
+        let lastTapTime = 0; // Biến tạm này đặt ở client là hoàn toàn chính xác
 
         let players = {};
         let cubes = [];
@@ -138,6 +135,7 @@
             }
         });
 
+        // Hàm tạo hiệu ứng hạt pháo hoa đặt ở Client (index)
         function spawnClientFireworks(x, y, color) {
             for(let i=0; i<25; i++) {
                 clientFireworks.push({
@@ -191,7 +189,6 @@
 
             drawGrid(camX, camY);
 
-            // Vẽ Cubes điểm trên bản đồ
             cubes.forEach(c => {
                 let screenX = c.x - camX + width / 2;
                 let screenY = c.y - camY + height / 2;
@@ -206,7 +203,6 @@
                 }
             });
 
-            // Vẽ Items đạo cụ
             items.forEach(it => {
                 let screenX = it.x - camX + width / 2;
                 let screenY = it.y - camY + height / 2;
@@ -216,7 +212,6 @@
                 ctx.fill();
             });
 
-            // Vẽ Pháo hoa hiệu ứng client
             for (let i = clientFireworks.length - 1; i >= 0; i--) {
                 let f = clientFireworks[i];
                 f.x += f.vx; f.y += f.vy; f.alpha -= 0.02;
@@ -230,7 +225,6 @@
                 ctx.restore();
             }
 
-            // Vẽ tất cả người chơi và Bot
             for (let id in players) {
                 let p = players[id];
                 if (!p.body || p.body.length === 0) continue;
@@ -258,7 +252,6 @@
                 ctx.fillText(p.name, head.x - camX + width / 2, head.y - camY + height / 2 - 55);
             }
 
-            // Cập nhật Bảng xếp hạng
             let sorted = Object.values(players).sort((a, b) => b.score - a.score).slice(0, 7);
             let lbHTML = '';
             sorted.forEach((p, idx) => {
@@ -267,7 +260,6 @@
             });
             lbList.innerHTML = lbHTML;
 
-            // HIỂN THỊ ĐẾM NGƯỢC COOLDOWN CHỮ TRÊN TRÌNH DUYỆT
             let timeLeft = Math.ceil((20000 - (Date.now() - lastClientDashTime)) / 1000);
             ctx.textAlign = 'left';
             if (timeLeft > 0 && timeLeft <= 20) {
@@ -277,7 +269,7 @@
             } else {
                 ctx.fillStyle = "rgba(74, 222, 128, 1)";
                 ctx.font = "bold 18px sans-serif";
-                ctx.fillText("Tăng tốc: DOUBLE-CLICK / DOUBLE-TAP", 25, height - 35);
+                ctx.fillText("Tăng tốc: NHẤP ĐÚP CHUỘT / TAP ĐÚP 2 LẦN", 25, height - 35);
             }
         }
 
@@ -291,33 +283,31 @@
         window.addEventListener('mousemove', moveInput);
         window.addEventListener('touchmove', (e) => { if (gameRunning) e.preventDefault(); moveInput(e); }, { passive: false });
 
-        // LOGIC KÍCH HOẠT TĂNG TỐC: ĐÚP CHUỘT (PC) / CHẠM ĐÚP 2 LẦN (MOBILE)
         function triggerDash() {
             let now = Date.now();
             if (now - lastClientDashTime >= 20000) {
                 lastClientDashTime = now;
                 socket.emit('setMouseDown', true);
                 
-                // Tự động giải phóng trạng thái tăng tốc sau 2 giây lướt tối đa
                 setTimeout(() => {
                     socket.emit('setMouseDown', false);
                 }, 2000);
             }
         }
 
-        // Bắt sự kiện Click đúp trên PC máy tính
+        // Nhấp đúp chuột trên PC
         window.addEventListener('mousedown', (e) => {
             let now = Date.now();
-            if (now - lastTapTime < 300) { // Nếu bấm 2 lần cách nhau dưới 300ms thì coi là đúp chuột
+            if (now - lastTapTime < 300) { 
                 triggerDash();
             }
             lastTapTime = now;
         });
 
-        // Bắt sự kiện Chạm 2 lần trên màn hình Điện thoại cảm ứng
+        // Chạm đúp 2 lần trên điện thoại
         window.addEventListener('touchstart', (e) => {
             let now = Date.now();
-            if (now - lastTapTime < 350) { // Khoảng cách 350ms cho chạm điện thoại thoải mái hơn
+            if (now - lastTapTime < 350) { 
                 triggerDash();
             }
             lastTapTime = now;
