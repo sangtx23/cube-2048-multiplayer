@@ -578,23 +578,56 @@
             animate();
         };
 
-        const moveInput = (e) => {
-            if(!gameRunning) return;
-            const clientX = e.touches ? e.touches[0].clientX : e.clientX;
-            const clientY = e.touches ? e.touches[0].clientY : e.clientY;
-            
-            myAngle = Math.atan2(clientY - height/2, clientX - width/2);
-            
-            // SỬA LỖI HIỂN THỊ: Gửi liên tục góc chính xác lên Server ngay khi di chuyển để tránh lệch tọa độ gây mất hình nền
-            socket.emit('updateInput', { angle: myAngle });
-        };
-        
-        window.addEventListener('mousemove', moveInput);
-        window.addEventListener('touchmove', (e) => { if(gameRunning) e.preventDefault(); moveInput(e); }, {passive:false});
-        
-        window.addEventListener('mousedown', () => {});
-        window.addEventListener('mouseup', () => {});
-        window.addEventListener('touchstart', () => {});
+       // Thay thế đoạn moveInput và các EventListener cũ ở cuối file index.txt bằng đoạn này:
+const moveInput = (e) => {
+    if (!gameRunning) return;
+
+    // 1. Lấy tọa độ ClientX, ClientY chính xác (Hỗ trợ tốt cho cả Chuột và Touch)
+    let clientX = 0;
+    let clientY = 0;
+    
+    if (e.touches && e.touches.length > 0) {
+        clientX = e.touches[0].clientX;
+        clientY = e.touches[0].clientY;
+    } else {
+        clientX = e.clientX;
+        clientY = e.clientY;
+    }
+
+    // 2. Lấy vị trí hiện tại của Cube của mình từ Server dữ liệu gửi về
+    let me = serverPlayers[socket.id];
+    if (me && me.body && me.body[0]) {
+        let headNode = me.body[0];
+
+        // 3. Chuyển đổi tọa độ Chuột/Touch từ màn hình sang tọa độ thực tế trong Game (World Coordinates)
+        // Hệ thức đảo ngược của việc dịch chuyển Camera: World = Screen - CanvasCenter + CamPosition
+        const mouseInGameX = clientX - (width / 2) + headNode.x;
+        const mouseInGameY = clientY - (height / 2) + headNode.y;
+
+        // 4. Tính toán góc quay chính xác dựa trên tọa độ thực tế trong map
+        myAngle = Math.atan2(mouseInGameY - headNode.y, mouseInGameX - headNode.x);
+    } else {
+        // Phương án dự phòng nếu chưa load kịp nhân vật
+        myAngle = Math.atan2(clientY - height / 2, clientX - width / 2);
+    }
+    
+    // Gửi góc chính xác tuyệt đối lên Server
+    socket.emit('updateInput', { angle: myAngle });
+};
+
+// Đăng ký sự kiện lắng nghe chuột và Touch mượt mà, không bị lag trên mobile
+window.addEventListener('mousemove', moveInput);
+
+window.addEventListener('touchmove', (e) => { 
+    if (gameRunning) {
+        if (e.cancelable) e.preventDefault(); // Ngăn trình duyệt cuộn màn hình khi đang vuốt điều khiển
+    }
+    moveInput(e); 
+}, { passive: false });
+
+window.addEventListener('touchstart', (e) => {
+    if (gameRunning) moveInput(e);
+}, { passive: true });
     </script>
 </body>
 </html>
