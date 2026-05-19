@@ -34,7 +34,7 @@ function spawnCube() {
 }
 
 function spawnItem(type) {
-    let t = type || ['x2', '/2', 'bomb'][Math.floor(Math.random() * 3)];
+    let t = type || ['x2', '/2', 'bomb', 'speed'][Math.floor(Math.random() * 4)];
     serverItems.push({
         id: Math.random().toString(36).substring(2, 9),
         x: Math.random() * (MAP_WIDTH - 150) + 75,
@@ -132,7 +132,6 @@ function handlePlayerDeath(playerId) {
             if (reCheck && !reCheck.alive) {
                 reCheck.alive = true;
                 reCheck.killStreak = 0;
-                reCheck.skillSpeedActive = false; 
                 let rx = Math.random() * (MAP_WIDTH - 600) + 300;
                 let ry = Math.random() * (MAP_HEIGHT - 600) + 300;
                 reCheck.body = [{ x: rx, y: ry, value: 2, baseScale: 1.0 }];
@@ -157,11 +156,10 @@ function spawnBot() {
         isBot: true,
         alive: true,
         angle: Math.random() * Math.PI * 2,
-        isMouseDown: false,
-        skillSpeedActive: false, 
-        skillSpeedTimer: 0,
+        isMouseDown: Math.random() < 0.15,
         killCount: 0,
         killStreak: 0,
+        speedBuffTimer: 0,
         botTargetTimer: 0,
         botTargetType: 'cube',
         botTargetId: null,
@@ -183,10 +181,9 @@ io.on('connection', (socket) => {
             alive: true,
             angle: 0,
             isMouseDown: false,
-            skillSpeedActive: false, 
-            skillSpeedTimer: 0,
             killCount: 0,
             killStreak: 0,
+            speedBuffTimer: 0,
             body: [{ x: Math.random() * (MAP_WIDTH - 600) + 300, y: Math.random() * (MAP_HEIGHT - 600) + 300, value: 2, baseScale: 1.0 }]
         };
         socket.emit('initPlayerName', { confirmedName: finalName });
@@ -195,17 +192,8 @@ io.on('connection', (socket) => {
     socket.on('updateInput', (data) => {
         let p = serverPlayers[socket.id];
         if (p && p.alive) {
-            p.angle = typeof data.angle === 'number' ? data.angle : 0;
-            p.isMouseDown = false; 
-        }
-    });
-
-    socket.on('activateSpeedSkill', () => {
-        let p = serverPlayers[socket.id];
-        if (p && p.alive && !p.skillSpeedActive) {
-            p.skillSpeedActive = true;
-            p.skillSpeedTimer = 7 * 60; 
-            io.to(socket.id).emit('speedSkillActivatedConfirmed');
+            p.angle = data.angle || 0;
+            p.isMouseDown = !!data.isMouseDown;
         }
     });
 
@@ -215,9 +203,11 @@ io.on('connection', (socket) => {
     });
 });
 
+// VÒNG LẶP VẬT LÝ CHÍNH CỦA SERVER (60 FPS)
 setInterval(() => {
     let players = Object.values(serverPlayers);
 
+    // 1. CẬP NHẬT AI BOT
     players.forEach(p => {
         if (!p.alive || !p.isBot || p.body.length === 0) return;
         p.botTargetTimer--;
@@ -236,11 +226,7 @@ setInterval(() => {
                 p.botTargetType = 'wander';
                 p.botTargetId = null;
             }
-            
-            if (Math.random() < 0.05 && !p.skillSpeedActive) {
-                p.skillSpeedActive = true;
-                p.skillSpeedTimer = 7 * 60;
-            }
+            p.isMouseDown = Math.random() < 0.22;
         }
 
         let targetX = null, targetY = null;
@@ -259,19 +245,31 @@ setInterval(() => {
         }
     });
 
+    // 2. XỬ LÝ DI CHUYỂN TOÀN BỘ NGƯỜI CHƠI VÀ BOT
     players.forEach(p => {
         if (!p.alive || p.body.length === 0) return;
 
         let speedFactor = 1.0;
-        if (p.skillSpeedActive) {
-            speedFactor = 3.0; 
-            p.skillSpeedTimer--;
-            if (p.skillSpeedTimer <= 0) {
-                p.skillSpeedActive = false;
-            }
+        if (p.speedBuffTimer > 0) {
+            speedFactor = 2.2;
+            p.speedBuffTimer--;
         }
 
         let baseStep = 2.86 * speedFactor;
+        if (p.isMouseDown && p.body.length > 1) {
+            baseStep *= 1.65;
+            if (Math.random() < 0.12) {
+                let tailIndex = p.body.length - 1;
+                let poppedNode = p.body.splice(tailIndex, 1)[0];
+                serverCubes.push({
+                    id: Math.random().toString(36).substring(2, 9),
+                    x: poppedNode.x + (Math.random() - 0.5) * 40,
+                    y: poppedNode.y + (Math.random() - 0.5) * 40,
+                    value: poppedNode.value
+                });
+                smartMergeOnServer(p, 0, "none");
+            }
+        }
 
         let head = p.body[0];
         head.x += Math.cos(p.angle) * baseStep;
@@ -289,114 +287,182 @@ setInterval(() => {
             if (!cur || !prev) continue;
             let dist = Math.hypot(cur.x - prev.x, cur.y - prev.y);
             let targetDist = 24 * ((prev.baseScale || 1) + (cur.baseScale || 1)) * 0.46;
+
             if (dist > targetDist) {
                 let angleNode = Math.atan2(prev.y - cur.y, prev.x - cur.x);
                 cur.x = prev.x - Math.cos(angleNode) * targetDist;
                 cur.y = prev.y - Math.sin(angleNode) * targetDist;
             }
         }
+    });
 
-        for (let i = serverCubes.length - 1; i >= 0; i--) {
-            let c = serverCubes[i];
-            let cRadius = (28 * calculateNodeScale(c.value)) / 2;
-            let dist = Math.hypot(head.x - c.x, head.y - c.y);
-            if (dist < headRadius + cRadius) {
-                if (head.value === c.value) {
-                    head.value *= 2;
-                    io.emit('playClientSound', { playerId: p.id, type: 'merge', val: head.value });
-                    smartMergeOnServer(p, 0, "none");
-                } else {
-                    smartMergeOnServer(p, c.value, "add");
-                }
-                serverCubes.splice(i, 1);
-            }
-        }
+    // 3. XỬ LÝ VA CHẠM THU HOẠCH CUBE THƯỜNG
+    players.forEach(p => {
+        if (!p.alive || p.body.length === 0) return;
+        let head = p.body[0];
+        let headSize = BASE_HEAD_SIZE * (head.baseScale || 1);
 
-        for (let i = serverItems.length - 1; i >= 0; i--) {
-            let it = serverItems[i];
-            let dist = Math.hypot(head.x - it.x, head.y - it.y);
-            if (dist < headRadius + 18) {
-                io.emit('playClientSound', { playerId: p.id, type: it.type });
-                
-                if (it.type === 'x2') {
-                    p.body.forEach(node => { node.value *= 2; });
-                    smartMergeOnServer(p, 0, "none");
-                } else if (it.type === '/2') {
-                    p.body.forEach(node => {
-                        node.value = Math.max(2, Math.floor(node.value / 2));
-                    });
-                    smartMergeOnServer(p, 0, "none");
-                } else if (it.type === 'bomb') {
-                    if (p.body.length > 1) {
-                        let lossCount = Math.floor(p.body.length / 2);
-                        let dropped = p.body.splice(p.body.length - lossCount, lossCount);
-                        explodeBodyToCubes(dropped);
-                        smartMergeOnServer(p, 0, "none");
-                    } else {
-                        handlePlayerDeath(p.id);
-                    }
-                }
-                serverItems.splice(i, 1);
+        for (let k = serverCubes.length - 1; k >= 0; k--) {
+            let c = serverCubes[k];
+            let d = Math.hypot(head.x - c.x, head.y - c.y);
+            if (d < (headSize / 2) + 12) {
+                smartMergeOnServer(p, c.value, "add");
+                serverCubes.splice(k, 1);
             }
         }
     });
 
-    let deadPlayersThisTick = new Set();
-    for (let i = 0; i < players.length; i++) {
-        let p1 = players[i];
-        if (!p1.alive || p1.body.length === 0 || deadPlayersThisTick.has(p1.id)) continue;
+    // 4. XỬ LÝ VA CHẠM ĂN HỘP VẬT PHẨM (ITEMS)
+    players.forEach(p => {
+        if (!p.alive || p.body.length === 0) return;
+        let head = p.body[0];
+        let headSize = BASE_HEAD_SIZE * (head.baseScale || 1);
 
-        let head1 = p1.body[0];
-        let h1Radius = (BASE_HEAD_SIZE * (head1.baseScale || 1)) / 2;
-
-        for (let j = 0; j < players.length; j++) {
-            let p2 = players[j];
-            if (!p2.alive || p2.body.length === 0 || p1.id === p2.id) continue;
-
-            for (let k = 0; k < p2.body.length; k++) {
-                if (k === 0) {
-                    let head2 = p2.body[0];
-                    let h2Radius = (BASE_HEAD_SIZE * (head2.baseScale || 1)) / 2;
-                    let dist = Math.hypot(head1.x - head2.x, head1.y - head2.y);
-                    if (dist < (h1Radius + h2Radius) * 0.85) {
-                        if (head1.value < head2.value) {
-                            deadPlayersThisTick.add(p1.id);
-                            p2.killCount++; p2.killStreak++;
-                            if (p2.killStreak % 10 === 0 && p2.killStreak >= 10) {
-                                io.emit('triggerGlobalMegaFireworks', { killerName: p2.name, killStreak: p2.killStreak });
-                            }
-                            io.emit('playerKilled', { killerId: p2.id, killerName: p2.name, victimId: p1.id, victimName: p1.name, killCount: p2.killCount, killStreak: p2.killStreak, fireworks: true });
-                            handlePlayerDeath(p1.id);
-                            break;
-                        }
+        for (let k = serverItems.length - 1; k >= 0; k--) {
+            let it = serverItems[k];
+            let d = Math.hypot(head.x - it.x, head.y - it.y);
+            if (d < (headSize / 2) + 18) {
+                if (it.type === 'x2') {
+                    p.body[0].value *= 2; 
+                    smartMergeOnServer(p, 0, "none");
+                    io.emit('playClientSound', { playerId: p.id, type: 'x2', floatingText: "✨ NHÂN ĐÔI KHỐI ĐẦU (X2)!", color: "#fbbf24" });
+                } 
+                else if (it.type === '/2') {
+                    p.body.forEach(node => { if (node.value > 2) node.value /= 2; });
+                    smartMergeOnServer(p, 0, "none");
+                    io.emit('playClientSound', { playerId: p.id, type: '/2', floatingText: "⚡ BỊ GIẢM SỨC MẠNH (/2)!", color: "#94a3b8" });
+                } 
+                else if (it.type === 'bomb') {
+                    if (p.body.length > 1) {
+                        let cutLength = Math.ceil(p.body.length / 2);
+                        let removedNodes = p.body.splice(cutLength);
+                        explodeBodyToCubes(removedNodes);
                     }
-                } else {
-                    let bodyNode = p2.body[k];
-                    let bRadius = (BASE_HEAD_SIZE * (bodyNode.baseScale || 1)) / 2;
-                    let dist = Math.hypot(head1.x - bodyNode.x, head1.y - bodyNode.y);
-                    if (dist < (h1Radius + bRadius) * 0.82) {
-                        if (head1.value === bodyNode.value) {
-                            bodyNode.value *= 2;
-                            io.emit('playClientSound', { playerId: p2.id, type: 'merge', val: bodyNode.value });
-                            smartMergeOnServer(p2, 0, "none");
-                            break;
-                        } else {
-                            deadPlayersThisTick.add(p1.id);
-                            p2.killCount++; p2.killStreak++;
-                            
-                            let triggersMega = (p2.killStreak % 10 === 0 && p2.killStreak >= 10);
-                            if (triggersMega) {
-                                io.emit('triggerGlobalMegaFireworks', { killerName: p2.name, killStreak: p2.killStreak });
-                            }
+                    smartMergeOnServer(p, 0, "none");
+                    io.emit('playClientSound', { playerId: p.id, type: 'bomb', floatingText: "💥 DẪM PHẢI BOM NỔ TÙNG PHÈO!", color: "#ef4444" });
+                } 
+                else if (it.type === 'speed') {
+                    if (!p.speedBuffTimer) p.speedBuffTimer = 0;
+                    p.speedBuffTimer += 300; 
 
-                            io.emit('playerKilled', { 
-                                killerId: p2.id, killerName: p2.name, victimId: p1.id, victimName: p1.name,
-                                killCount: p2.killCount, killStreak: p2.killStreak, fireworks: true 
-                            });
-                            
-                            handlePlayerDeath(p1.id);
-                            break;
+                    let totalSecondsLeft = Math.ceil(p.speedBuffTimer / 60);
+
+                    io.emit('playClientSound', { 
+                        playerId: p.id, 
+                        type: 'speed', 
+                        floatingText: "⚡ Tốc Độ Siêu Hạng (+5s)!", 
+                        color: "#00ffff",
+                        speedDuration: totalSecondsLeft
+                    });
+                }
+                serverItems.splice(k, 1);
+            }
+        }
+    });
+
+    // 5. XỬ LÝ VA CHẠM ĐỐI KHÁNG ĐẦU VÀ ĂN ĐUÔI
+    let playerIds = Object.keys(serverPlayers);
+    let deadPlayersThisTick = new Set(); 
+
+    for (let i = 0; i < playerIds.length; i++) {
+        let p1 = serverPlayers[playerIds[i]];
+        if (!p1 || !p1.alive || p1.body.length === 0 || deadPlayersThisTick.has(p1.id)) continue;
+
+        for (let j = 0; j < playerIds.length; j++) {
+            if (i === j) continue;
+            let p2 = serverPlayers[playerIds[j]];
+            if (!p2 || !p2.alive || p2.body.length === 0 || deadPlayersThisTick.has(p2.id)) continue;
+
+            let h1 = p1.body[0]; 
+            let h2 = p2.body[0]; 
+            let size1 = BASE_HEAD_SIZE * (h1.baseScale || 1);
+            let size2 = BASE_HEAD_SIZE * (h2.baseScale || 1);
+
+            let distHeadToHead = Math.hypot(h1.x - h2.x, h1.y - h2.y);
+            if (distHeadToHead < (size1 / 2) + (size2 / 2) - 5) {
+                if (h1.value > h2.value) {
+                    deadPlayersThisTick.add(p2.id);
+                    p1.killCount++;
+                    p1.killStreak++;
+                    
+                    // Chỉnh sửa: Phát tín hiệu thông báo Marquee và Pháo hoa toàn map cho tất cả người chơi
+                    let triggersMega = (p1.killStreak % 10 === 0 && p1.killStreak >= 10);
+                    if (triggersMega) {
+                        io.emit('triggerGlobalMegaFireworks', { killerName: p1.name, killStreak: p1.killStreak });
+                    }
+
+                    io.emit('playerKilled', { 
+                        killerId: p1.id, killerName: p1.name, victimId: p2.id, victimName: p2.name,
+                        killCount: p1.killCount, killStreak: p1.killStreak, fireworks: true 
+                    });
+                    
+                    smartMergeOnServer(p1, h2.value, "add");
+                    handlePlayerDeath(p2.id);
+                    break; 
+                }
+                else if (h2.value > h1.value) {
+                    deadPlayersThisTick.add(p1.id);
+                    p2.killCount++;
+                    p2.killStreak++;
+                    
+                    // Chỉnh sửa: Phát tín hiệu thông báo Marquee và Pháo hoa toàn map cho tất cả người chơi
+                    let triggersMega = (p2.killStreak % 10 === 0 && p2.killStreak >= 10);
+                    if (triggersMega) {
+                        io.emit('triggerGlobalMegaFireworks', { killerName: p2.name, killStreak: p2.killStreak });
+                    }
+
+                    io.emit('playerKilled', { 
+                        killerId: p2.id, killerName: p2.name, victimId: p1.id, victimName: p1.name,
+                        killCount: p2.killCount, killStreak: p2.killStreak, fireworks: true 
+                    });
+                    
+                    smartMergeOnServer(p2, h1.value, "add");
+                    handlePlayerDeath(p1.id);
+                    break;
+                }
+            }
+
+            for (let nodeIndex = 1; nodeIndex < p2.body.length; nodeIndex++) {
+                let targetNode = p2.body[nodeIndex];
+                if (!targetNode) continue;
+                
+                let distToNode = Math.hypot(h1.x - targetNode.x, h1.y - targetNode.y);
+                let hitRadius = (size1 / 2) + (BASE_HEAD_SIZE * (targetNode.baseScale || 1) / 2) - 2;
+
+                if (distToNode < hitRadius) {
+                    if (h1.value > targetNode.value) {
+                        let severedTail = p2.body.splice(nodeIndex);
+                        explodeBodyToCubes(severedTail);
+                        smartMergeOnServer(p1, targetNode.value, "add");
+                        
+                        io.emit('playClientSound', { 
+                            playerId: p1.id, 
+                            type: 'merge', 
+                            floatingText: `✂️ Đã cắn đứt đuôi của ${p2.name}!`, 
+                            color: "#22c55e" 
+                        });
+                        
+                        smartMergeOnServer(p2, 0, "none");
+                        break; 
+                    } 
+                    else {
+                        deadPlayersThisTick.add(p1.id);
+                        p2.killCount++;
+                        p2.killStreak++;
+                        
+                        // Chỉnh sửa: Phát tín hiệu thông báo Marquee và Pháo hoa toàn map cho tất cả người chơi
+                        let triggersMega = (p2.killStreak % 10 === 0 && p2.killStreak >= 10);
+                        if (triggersMega) {
+                            io.emit('triggerGlobalMegaFireworks', { killerName: p2.name, killStreak: p2.killStreak });
                         }
+
+                        io.emit('playerKilled', { 
+                            killerId: p2.id, killerName: p2.name, victimId: p1.id, victimName: p1.name,
+                            killCount: p2.killCount, killStreak: p2.killStreak, fireworks: true 
+                        });
+                        
+                        handlePlayerDeath(p1.id);
+                        break;
                     }
                 }
             }
@@ -412,5 +478,5 @@ setInterval(() => {
 }, 1000 / 60);
 
 http.listen(PORT, () => {
-    console.log(`[SERVER] Đang chạy ổn định tại cổng : ${PORT}`);
+    console.log(`[SERVER RUNNING] Hệ thống đấu trường 2048 Cube đã mở tại Port: ${PORT}`);
 });
