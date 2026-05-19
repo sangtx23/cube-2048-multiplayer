@@ -2,109 +2,134 @@
 <html lang="vi">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, minimal-ui">
     <title>2048 Cube - King Arena Ultra Max Multiplayer</title>
     <style>
-        * { box-sizing: border-box; user-select: none; -webkit-user-select: none; }
-        body, html { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; background-color: #030712; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        html, body { margin: 0; padding: 0; overflow: hidden; background-color: #030712; font-family: sans-serif; touch-action: none; user-select: none; width: 100%; height: 100%; }
+        canvas { display: block; width: 100%; height: 100%; }
         
-        /* 4. MÀN HÌNH CHỜ TRƯỚC KHI TẢI GAME (CUSTOM SPLASH SCREEN THAY CHO RENDER) */
-        #custom-loader-screen {
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: linear-gradient(135deg, #0f172a, #020617);
-            z-index: 99999; display: flex; flex-direction: column; align-items: center; justify-content: center;
-            color: #ffffff; transition: opacity 0.5s ease;
+        /* Yêu cầu 4: Màn hình Custom Load Game thay thế hoàn toàn cho Render mặc định */
+        #custom-loader {
+            position: absolute; inset: 0; background: #0b0f19;
+            display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 200;
+            transition: opacity 0.5s ease;
         }
-        .loader-logo { font-size: 42px; font-weight: 900; background: linear-gradient(to right, #fbbf24, #f59e0b); -webkit-background-clip: text; -webkit-text-fill-color: transparent; margin-bottom: 20px; letter-spacing: 2px; }
-        .loader-spinner { border: 4px solid rgba(255, 255, 255, 0.1); width: 50px; height: 50px; border-radius: 50%; border-left-color: #fbbf24; animation: spin-loader 1s linear infinite; margin-bottom: 20px; }
-        .loader-text { font-size: 14px; font-weight: 600; color: #94a3b8; letter-spacing: 1px; }
-        @keyframes spin-loader { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-
-        /* 5. GIAO DIỆN BẮT BUỘC XOAY MÀN HÌNH NGANG (LANDSCAPE LOCK WARNING) */
-        #landscape-lock-overlay {
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: #090d16; z-index: 999999; display: none;
-            flex-direction: column; align-items: center; justify-content: center; color: white; text-align: center; padding: 20px;
+        .spinner {
+            width: 60px; height: 60px; border: 5px solid #1f2937; border-top: 5px solid #fbbf24;
+            border-radius: 50%; animation: spin 1s linear infinite; box-shadow: 0 0 15px rgba(251, 191, 36, 0.5);
         }
-        .phone-icon { width: 60px; height: 100px; border: 4px solid #fbbf24; border-radius: 10px; position: relative; animation: rotate-phone 2s ease-in-out infinite; margin-bottom: 30px; }
-        .phone-icon::after { content: ''; position: absolute; bottom: 5px; left: 50%; transform: translateX(-50%); width: 10px; height: 10px; background: #fbbf24; border-radius: 50%; }
-        @keyframes rotate-phone { 0% { transform: rotate(0deg); } 50% { transform: rotate(-90deg); } 100% { transform: rotate(-90deg); } }
-        .lock-title { font-size: 22px; font-weight: bold; margin-bottom: 10px; color: #fbbf24; }
-        .lock-desc { font-size: 14px; color: #94a3b8; max-width: 300px; line-height: 1.5; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
 
-        canvas { display: block; width: 100vw; height: 100vh; background-color: #0b0f19; }
-
-        /* 3. THIẾT KẾ NÚT BẤM TĂNG TỐC X3 Ở GÓC DƯỚI BÊN TRÁI MÀN HÌNH */
-        #skill-dash-btn {
-            position: fixed; bottom: 25px; left: 25px; width: 85px; height: 85px;
-            border-radius: 50%; background: linear-gradient(135deg, #ec4899, #8b5cf6);
-            border: 4px solid #ffffff; color: white; font-weight: 900; font-size: 14px;
-            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.6); z-index: 9999; cursor: pointer;
-            overflow: hidden; outline: none; touch-action: manipulation; display: none;
+        #start-screen {
+            position: absolute; inset: 0; background: #030712;
+            display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 100;
+            display: none; /* Sẽ hiện sau khi bộ tải đóng */
         }
-        #skill-dash-btn:active { transform: scale(0.9); }
-        .btn-text-layer { position: absolute; width: 100%; text-align: center; top: 50%; transform: translateY(-50%); z-index: 3; text-shadow: 1px 1px 4px rgba(0,0,0,0.8); }
-        #dash-cooldown-overlay { position: absolute; bottom: 0; left: 0; width: 100%; height: 0%; background: rgba(0, 0, 0, 0.75); z-index: 2; transition: height 0.1s linear; }
+        #name-input { padding: 12px; font-size: 18px; border-radius: 25px; border: 2px solid #fbbf24; width: 220px; text-align: center; margin-bottom: 15px; outline: none; background: #1f2937; color: white; }
+        #start-btn { padding: 12px 50px; font-size: 18px; background: #fbbf24; color: #000; border: none; border-radius: 25px; cursor: pointer; font-weight: bold; box-shadow: 0 0 15px #fbbf24; }
+        
+        /* GIAO DIỆN UI THÔNG MINH */
+        #ui { position: absolute; top: 12px; left: 12px; color: white; pointer-events: none; z-index: 10; display: none; font-size: 14px; text-shadow: 1px 1px 2px black; max-width: 45%; }
+        #ui br { display: none; } 
+        #ui #chain-text { margin-left: 5px; color: #fbbf24; font-weight: bold; }
 
-        #start-screen { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: radial-gradient(circle, #1e1b4b 0%, #030712 100%); display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 100; color: white; padding: 20px; }
-        .title-container { text-align: center; margin-bottom: 30px; animation: pulse 2s infinite alternate; }
-        @keyframes pulse { 0% { transform: scale(1); } 100% { transform: scale(1.03); } }
-        h1 { margin: 0; font-size: 48px; font-weight: 900; letter-spacing: 2px; background: linear-gradient(to right, #fbbf24, #f59e0b, #ef4444); -webkit-background-clip: text; -webkit-text-fill-color: transparent; text-shadow: 0 4px 12px rgba(0,0,0,0.3); }
-        .subtitle { font-size: 14px; color: #a1a1aa; text-transform: uppercase; letter-spacing: 4px; margin-top: 5px; }
-        .card { background: rgba(15, 23, 42, 0.6); padding: 30px; border-radius: 20px; border: 1px solid rgba(255,255,255,0.1); backdrop-filter: blur(10px); width: 100%; max-width: 360px; box-shadow: 0 10px 25px rgba(0,0,0,0.5); display: flex; flex-direction: column; gap: 20px; }
-        input { width: 100%; padding: 14px 20px; border-radius: 12px; border: 2px solid #3f3f46; background: #09090b; color: white; font-size: 16px; outline: none; transition: all 0.3s; text-align: center; font-weight: 600; }
-        input:focus { border-color: #fbbf24; box-shadow: 0 0 12px rgba(251,191,36,0.3); }
-        #start-btn { width: 100%; padding: 14px; border-radius: 12px; border: none; background: linear-gradient(to right, #fbbf24, #f59e0b); color: #000; font-size: 18px; font-weight: 800; cursor: pointer; transition: all 0.2s; box-shadow: 0 4px 15px rgba(251,191,36,0.4); text-transform: uppercase; letter-spacing: 1px; }
-        #start-btn:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(251,191,36,0.6); }
-        #ui { position: fixed; top: 20px; left: 20px; color: white; font-size: 18px; font-weight: bold; font-family: monospace; z-index: 10; display: none; pointer-events: none; text-shadow: 2px 2px 4px rgba(0,0,0,0.8); background: rgba(0,0,0,0.4); padding: 10px 15px; border-radius: 10px; border: 1px solid rgba(255,255,255,0.05); }
-        #leaderboard { position: fixed; top: 20px; right: 20px; color: white; background: rgba(15, 23, 42, 0.75); backdrop-filter: blur(5px); padding: 15px 20px; border-radius: 15px; font-size: 14px; z-index: 10; min-width: 240px; box-shadow: 0 10px 25px rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.1); display: none; }
-        #leaderboard h3 { margin: 0 0 12px 0; text-align: center; color: #fbbf24; font-size: 16px; text-transform: uppercase; letter-spacing: 1px; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 8px; font-weight: 800; }
-        .lb-item { display: flex; justify-content: space-between; margin-bottom: 6px; font-family: monospace; font-size: 14px; font-weight: 600; padding: 4px 6px; border-radius: 4px; }
-        .lb-item.self { background: rgba(251,191,36,0.2); color: #fbbf24; border-left: 3px solid #fbbf24; }
-        #kill-feed { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); color: white; z-index: 10; font-weight: bold; pointer-events: none; text-align: center; max-height: 120px; overflow: hidden; display: flex; flex-direction: column; gap: 6px; width: 100%; max-width: 500px; }
-        .feed-msg { background: rgba(0, 0, 0, 0.6); padding: 6px 16px; border-radius: 20px; font-size: 13px; animation: slideUp 0.3s ease-out; border: 1px solid rgba(255,255,255,0.05); width: fit-content; margin: 0 auto; box-shadow: 0 4px 10px rgba(0,0,0,0.3); }
-        @keyframes slideUp { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
-        #toggle-lb-btn { position: fixed; top: 20px; right: 20px; z-index: 11; background: #fbbf24; border: none; padding: 8px 14px; border-radius: 8px; font-weight: bold; cursor: pointer; display: none; box-shadow: 0 4px 10px rgba(0,0,0,0.3); }
+        /* BẢNG XẾP HẠNG */
+        #leaderboard { position: absolute; top: 12px; right: 12px; background: rgba(3, 7, 18, 0.9); padding: 10px; border-radius: 10px; color: white; min-width: 200px; z-index: 95; display: none; border: 1px solid #fbbf24; box-shadow: 0 0 12px rgba(251, 191, 36, 0.25); transition: all 0.3s ease; }
+        .lb-title { margin: 0 0 6px 0; text-align: center; color: #fbbf24; font-size: 14px; border-bottom: 1px dashed rgba(251, 191, 36, 0.4); padding-bottom: 4px; font-weight: bold; cursor: pointer; }
+        .lb-item { display: flex; justify-content: space-between; font-size: 12px; margin: 4px 0; padding: 2px 4px; border-radius: 4px; }
+        .lb-you { background: rgba(251, 191, 36, 0.2); color: #fde047; font-weight: bold; border: 1px dashed #fbbf24; }
+        .lb-top1 { color: #facc15; font-weight: bold; }
+        
+        #toggle-lb-btn { display: none; position: absolute; top: 12px; right: 12px; z-index: 96; background: #fbbf24; color: black; border: none; padding: 8px 14px; font-weight: bold; font-size: 13px; border-radius: 20px; cursor: pointer; box-shadow: 0 0 8px #fbbf24; }
+        #kill-feed { position: absolute; bottom: 20px; left: 12px; z-index: 10; color: #ef4444; font-weight: bold; font-size: 14px; text-shadow: 0 0 4px black; pointer-events: none; }
+        
+        #mega-announcement-container { position: absolute; top: 20%; left: 0; width: 100%; overflow: hidden; white-space: nowrap; pointer-events: none; z-index: 90; display: none; background: rgba(239, 68, 68, 0.15); border-top: 2px dashed #f59e0b; border-bottom: 2px dashed #f59e0b; padding: 8px 0; }
+        #mega-announcement { display: inline-block; font-size: 24px; font-weight: bold; color: #fde047; text-shadow: 0 0 8px #ef4444, 0 0 18px #f59e0b; animation: marqueeText 10s linear infinite; }
+        #speed-timer-ui { margin-top: 6px; padding: 4px 8px; background: rgba(251, 191, 36, 0.2); border: 1px solid #fbbf24; border-radius: 6px; display: none; color: #fbbf24; font-weight: bold; font-size: 12px; width: fit-content; box-shadow: 0 0 6px rgba(251, 191, 36, 0.4); }
+        
+        @keyframes marqueeText { 0% { transform: translate3d(100%, 0, 0); } 100% { transform: translate3d(-100%, 0, 0); } }
+
+        /* Yêu cầu 3: Giao diện Nút Bấm Tăng Tốc Góc Dưới Bên Trái */
+        #skill-speed-btn {
+            position: absolute; bottom: 30px; left: 30px; width: 75px; height: 75px;
+            background: radial-gradient(circle, #fbbf24 0%, #d97706 100%);
+            border: 3px solid #fff; border-radius: 50%; color: white; font-weight: bold;
+            font-size: 13px; display: none; align-items: center; justify-content: center;
+            flex-direction: column; cursor: pointer; z-index: 99; touch-action: manipulation;
+            box-shadow: 0 0 20px rgba(251, 191, 36, 0.7); user-select: none;
+        }
+        #skill-speed-btn:active { transform: scale(0.92); }
+        #skill-speed-btn.cooldown {
+            background: #4b5563 !important; box-shadow: none !important; border-color: #9ca3af !important; cursor: not-allowed;
+        }
+        #skill-speed-btn .cd-overlay {
+            position: absolute; bottom: 0; left: 0; right: 0; top: 0; background: rgba(0, 0, 0, 0.42); border-radius: 50%; height: 0%; transition: height 0.1s linear;
+        }
+
+        /* Yêu cầu 6: Ép buộc chơi màn hình ngang trên điện thoại di động */
+        #landscape-lock {
+            position: absolute; inset: 0; background: #030712; z-index: 9999;
+            display: none; flex-direction: column; align-items: center; justify-content: center; color: white; text-align: center; padding: 20px;
+        }
+        #landscape-lock svg { width: 80px; height: 80px; fill: #fbbf24; margin-bottom: 20px; animation: rotateDevice 2s ease-in-out infinite; }
+        @keyframes rotateDevice { 0%, 100% { transform: rotate(0deg); } 50% { transform: rotate(-90deg); } }
+
+        @media (max-width: 768px) {
+            #leaderboard { display: none !important; top: 55px; right: 12px; min-width: 180px; max-height: 55vh; overflow-y: auto; }
+            #leaderboard.open { display: block !important; }
+            #toggle-lb-btn { display: block; }
+            #ui { font-size: 12px; top: 12px; }
+            #ui div:last-child { display: none !important; }
+            #mega-announcement { font-size: 16px; }
+            #skill-speed-btn { bottom: 20px; left: 20px; width: 68px; height: 68px; font-size: 12px; }
+        }
     </style>
     <script src="/socket.io/socket.io.js"></script>
 </head>
 <body>
 
-    <div id="custom-loader-screen">
-        <div class="loader-logo">2048 CUBE</div>
-        <div class="loader-spinner"></div>
-        <div class="loader-text">ĐANG KẾT NỐI ĐẤU TRƯỜNG...</div>
+    <div id="custom-loader">
+        <div class="spinner"></div>
+        <h2 style="color: #fbbf24; margin-top: 25px; font-family: sans-serif; letter-spacing: 1px; font-size: 18px;">ĐANG TẢI ARENA ULTRA MAX...</h2>
     </div>
 
-    <div id="landscape-lock-overlay">
-        <div class="phone-icon"></div>
-        <div class="lock-title">Vui lòng xoay ngang màn hình</div>
-        <div class="lock-desc">Trò chơi yêu cầu màn hình ngang để có góc nhìn săn đuổi tốt nhất. Hãy bật tính năng tự động xoay màn hình của thiết bị.</div>
+    <div id="landscape-lock">
+        <svg viewBox="0 0 24 24"><path d="M19 1H5c-1.1 0-2 .9-2 2v18c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V3c0-1.1-.9-2-2-2zm-2 18H7V5h10v14z"/></svg>
+        <h2 style="margin: 10px 0; font-size: 20px;">Vui Lòng Xoay Ngang Điện Thoại</h2>
+        <p style="color: #9ca3af; font-size: 14px;">Để có trải nghiệm thi đấu mượt mà và chuẩn xác nhất!</p>
     </div>
-
-    <button id="skill-dash-btn">
-        <div class="btn-text-layer">⚡ SPEED</div>
-        <div id="dash-cooldown-overlay"></div>
-    </button>
 
     <div id="start-screen">
-        <div class="title-container">
-            <h1>2048 Cube</h1>
-            <div class="subtitle">Arena King Multiplayer</div>
-        </div>
-        <div class="card">
-            <input type="text" id="name-input" placeholder="NHẬP TÊN CỦA BẠN..." maxLength="14">
-            <button id="start-btn">Vào Đấu Trường</button>
-        </div>
+        <h1 style="color:white; margin-bottom:10px; letter-spacing: 2px; text-shadow: 0 0 10px #fbbf24; font-size: 24px;">2048 CUBE MULTIPLAYER</h1>
+        <p style="color: #9ca3af; font-size: 13px; margin-top: 0; margin-bottom: 20px;">Hào quang cầu vồng - Pháo hoa rực rỡ</p>
+        <input type="text" id="name-input" placeholder="Nhập tên của bạn..." maxlength="10">
+        <button id="start-btn">VÀO ĐẤU TRƯỜNG</button>
     </div>
 
-    <div id="ui">Sang: 2 - 2</div>
-    <button id="toggle-lb-btn">🏆 TOP</button>
+    <div id="ui">
+        <b id="p-name">Bạn:</b><span id="chain-text">2</span>
+        <div id="speed-timer-ui">⚡ ĐANG TĂNG TỐC X3: <span id="speed-seconds">0</span>s</div>
+        <div style="margin-top: 6px; font-size: 11px; color: #a78bfa;">Sử dụng NÚT SKILL góc trái để bứt tốc!</div>
+    </div>
+
+    <div id="skill-speed-btn" onclick="triggerSpeedSkill()">
+        <span id="skill-label">⚡ X3</span>
+        <span id="skill-cd-text" style="font-size:10px; margin-top:2px; display:none;">20s</span>
+        <div class="cd-overlay" id="skill-cd-overlay"></div>
+    </div>
+
+    <button id="toggle-lb-btn" onclick="toggleMobileLeaderboard()">🏆 TOP</button>
+
     <div id="leaderboard">
-        <h3>🏆 Top 10 Arena King</h3>
+        <div class="lb-title" onclick="toggleMobileLeaderboard()">👑 TOP 10 ARENA KING</div>
         <div id="lb-content"></div>
     </div>
+
     <div id="kill-feed"></div>
+    
+    <div id="mega-announcement-container">
+        <div id="mega-announcement"></div>
+    </div>
 
     <canvas id="gameCanvas"></canvas>
 
@@ -112,368 +137,480 @@
         const socket = io();
         const canvas = document.getElementById('gameCanvas');
         const ctx = canvas.getContext('2d');
-
         const startScreen = document.getElementById('start-screen');
         const nameInput = document.getElementById('name-input');
         const startBtn = document.getElementById('start-btn');
-        const uiDiv = document.getElementById('ui');
-        const leaderboardDiv = document.getElementById('leaderboard');
         const lbContent = document.getElementById('lb-content');
         const killFeed = document.getElementById('kill-feed');
-        const toggleLbBtn = document.getElementById('toggle-lb-btn');
+        const megaContainer = document.getElementById('mega-announcement-container');
+        const megaAlert = document.getElementById('mega-announcement');
+        const speedTimerUi = document.getElementById('speed-timer-ui');
+        const speedSecondsSpan = document.getElementById('speed-seconds');
+        
+        // Quản lý kĩ năng bấm x3 (Yêu cầu 3)
+        const speedBtn = document.getElementById('skill-speed-btn');
+        const speedCdText = document.getElementById('skill-cd-text');
+        const speedCdOverlay = document.getElementById('skill-cd-overlay');
+        const speedLabel = document.getElementById('skill-label');
+        
+        let isSkillInCooldown = false;
+        let skillCooldownTimeLeft = 0;
+        let skillActiveDurationLeft = 0;
+        let skillTimerInterval = null;
 
-        // 3. ĐỊNH NGHĨA BIẾN NÚT BẤM TĂNG TỐC MỚI
-        const dashBtn = document.getElementById('skill-dash-btn');
-        const dashOverlay = document.getElementById('dash-cooldown-overlay');
-        let dashCooldownActive = false;
+        let width, height, gameRunning = false;
+        let serverPlayers = {}, serverCubes = [], serverItems = [];
+        let myAngle = 0;
+        let myConfirmedName = "Player";
+        
+        let starDustParticles = []; 
+        let fireworkExplosions = [];
+        let floatingTexts = [];
+        let rainbowHue = 0; 
+        let countdownTimerInterval = null; 
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
 
-        // 4. LOGIC XÓA MÀN HÌNH CHỜ SAU KHI TẢI XONG
-        window.addEventListener('load', () => {
-            const loader = document.getElementById('custom-loader-screen');
+        // Giả lập kết thúc tải Game sau 1.5 giây để hiện màn hình chơi (Yêu cầu 4)
+        window.addEventListener('DOMContentLoaded', () => {
             setTimeout(() => {
+                const loader = document.getElementById('custom-loader');
                 loader.style.opacity = '0';
-                setTimeout(() => loader.style.display = 'none', 500);
-            }, 800); // Tạo độ trễ nhỏ tạo cảm giác mượt mà
+                setTimeout(() => {
+                    loader.style.display = 'none';
+                    startScreen.style.display = 'flex';
+                }, 500);
+            }, 1500);
         });
 
-        // 5. KIỂM TRA VÀ ÉP MÀN HÌNH NGANG TRÊN ĐIỆN THOẠI
+        // Xử lý kiểm tra bắt buộc màn hình ngang (Yêu cầu 6)
         function checkOrientation() {
-            const lockOverlay = document.getElementById('landscape-lock-overlay');
-            // Chỉ kích hoạt cảnh báo trên thiết bị di động khi xoay dọc
+            const lockView = document.getElementById('landscape-lock');
+            // Nếu là thiết bị di động dựa trên kích thước hoặc touch và chiều dọc
             if (window.innerHeight > window.innerWidth && window.innerWidth <= 768) {
-                lockOverlay.style.display = 'flex';
+                lockView.style.display = 'flex';
             } else {
-                lockOverlay.style.display = 'none';
-                resize();
+                lockView.style.display = 'none';
             }
         }
         window.addEventListener('resize', checkOrientation);
         window.addEventListener('orientationchange', checkOrientation);
         checkOrientation();
-
-        let players = {};
-        let cubes = [];
-        let gameRunning = false;
-        let targetAngle = 0;
-        let floatingTexts = [];
-
-        const MAP_WIDTH = 3000;
-        const MAP_HEIGHT = 2000;
-
-        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-        function playTone(freq, type, duration) {
-            if (!audioCtx) return;
-            let osc = audioCtx.createOscillator();
-            let gain = audioCtx.createGain();
-            osc.type = type;
-            osc.frequency.value = freq;
-            gain.gain.setValueAtTime(0.08, audioCtx.currentTime);
-            gain.gain.exponentialRampToValueAtTime(0.00001, audioCtx.currentTime + duration);
-            osc.connect(gain);
-            gain.connect(audioCtx.destination);
-            osc.start();
-            osc.stop(audioCtx.currentTime + duration);
+        
+        function playSound(type, freqValue = 200) {
+            try {
+                if (audioCtx.state === 'suspended') audioCtx.resume();
+                const osc = audioCtx.createOscillator();
+                const gainNode = audioCtx.createGain();
+                osc.connect(gainNode); gainNode.connect(audioCtx.destination);
+                if (type === 'merge') {
+                    osc.type = 'triangle';
+                    osc.frequency.setValueAtTime(freqValue, audioCtx.currentTime);
+                    osc.frequency.exponentialRampToValueAtTime(freqValue * 1.5, audioCtx.currentTime + 0.15);
+                    gainNode.gain.setValueAtTime(0.15, audioCtx.currentTime);
+                    gainNode.gain.linearRampToValueAtTime(0.01, audioCtx.currentTime + 0.15);
+                    osc.start(); osc.stop(audioCtx.currentTime + 0.15);
+                } 
+                else if (type === 'item') {
+                    osc.type = 'sine';
+                    osc.frequency.setValueAtTime(320, audioCtx.currentTime);
+                    osc.frequency.linearRampToValueAtTime(650, audioCtx.currentTime + 0.2);
+                    gainNode.gain.setValueAtTime(0.2, audioCtx.currentTime);
+                    gainNode.gain.linearRampToValueAtTime(0.01, audioCtx.currentTime + 0.2);
+                    osc.start(); osc.stop(audioCtx.currentTime + 0.2);
+                } 
+                else if (type === 'bomb') {
+                    osc.type = 'sawtooth';
+                    osc.frequency.setValueAtTime(110, audioCtx.currentTime);
+                    osc.frequency.linearRampToValueAtTime(30, audioCtx.currentTime + 0.4);
+                    gainNode.gain.setValueAtTime(0.35, audioCtx.currentTime);
+                    gainNode.gain.linearRampToValueAtTime(0.01, audioCtx.currentTime + 0.4);
+                    osc.start(); osc.stop(audioCtx.currentTime + 0.4);
+                }
+                else if (type === 'kill') {
+                    osc.type = 'square';
+                    osc.frequency.setValueAtTime(400, audioCtx.currentTime);
+                    osc.frequency.setValueAtTime(700, audioCtx.currentTime + 0.12);
+                    gainNode.gain.setValueAtTime(0.25, audioCtx.currentTime);
+                    gainNode.gain.linearRampToValueAtTime(0.01, audioCtx.currentTime + 0.25);
+                    osc.start(); osc.stop(audioCtx.currentTime + 0.25);
+                }
+            } catch(e) {}
         }
 
+        const colors = { 
+            2: '#ef4444', 4: '#22c55e', 8: '#3b82f6', 16: '#06b6d4', 32: '#14b8a6', 
+            64: '#f59e0b', 128: '#f97316', 256: '#eab308', 512: '#a855f7', 1024: '#db2777', 2048: '#ec4899'
+        };
+
         function resize() {
-            canvas.width = window.innerWidth;
-            canvas.height = window.innerHeight;
+            width = window.innerWidth; height = window.innerHeight;
+            canvas.width = width; canvas.height = height;
+            checkOrientation();
         }
         window.addEventListener('resize', resize);
         resize();
 
-        toggleLbBtn.onclick = (e) => {
-            e.stopPropagation();
-            if (leaderboardDiv.style.display === 'none' || leaderboardDiv.style.display === '') {
-                leaderboardDiv.style.display = 'block';
-            } else {
-                leaderboardDiv.style.display = 'none';
-            }
-        };
-
-        // 3. EVENT XỬ LÝ KHI NGƯỜI CHƠI BẤM NÚT TĂNG TỐC X3
-        dashBtn.addEventListener('click', triggerDashSkill);
-        dashBtn.addEventListener('touchstart', (e) => {
-            e.preventDefault();
-            triggerDashSkill();
-        });
-
-        function triggerDashSkill() {
-            if (!gameRunning || dashCooldownActive) return;
-
-            // Gửi lệnh kích hoạt Skill lên Server
-            socket.emit('activateDashSkill');
-
-            // Khởi động đếm ngược 20s hồi chiêu ngay tại Client
-            dashCooldownActive = true;
-            dashOverlay.style.height = '100%';
-            dashBtn.disabled = true;
-
-            let cooldownLeft = 20; // 20 giây hồi chiêu
-            let cdInterval = setInterval(() => {
-                cooldownLeft -= 0.1;
-                let percent = (cooldownLeft / 20) * 100;
-                dashOverlay.style.height = `${percent}%`;
-
-                if (cooldownLeft <= 0) {
-                    clearInterval(cdInterval);
-                    dashCooldownActive = false;
-                    dashOverlay.style.height = '0%';
-                    dashBtn.disabled = false;
-                }
-            }, 100);
+        function formatNumber(num) {
+            if (num < 1024) return num;
+            const suffixes = ["", "K", "M", "B", "T", "W", "KW", "MW", "BW", "TW"];
+            let i = 0; let val = num;
+            while (val >= 1024 && i < suffixes.length - 1) { val /= 1024; i++; }
+            return (val % 1 === 0 ? val : val.toFixed(1)) + suffixes[i];
         }
 
-        // 1. LOẠI BỎ CHUỘT/TOUCH ĐỂ TĂNG TỐC - CHỈ ĐỂ ĐIỀU HƯỚNG GÓC XOAY
-        window.addEventListener('mousemove', (e) => {
-            if (!gameRunning) return;
-            updateMouseAngle(e.clientX, e.clientY);
+        function initStarDust() {
+            starDustParticles = [];
+            for (let i = 0; i < 150; i++) {
+                starDustParticles.push({ x: Math.random() * 3600, y: Math.random() * 3600, size: Math.random() * 1.8 + 0.5, alpha: Math.random() * 0.6 + 0.2, speed: Math.random() * 0.3 + 0.1 });
+            }
+        }
+        initStarDust();
+
+        function createFireworkCluster(targetX, targetY) {
+            const numTia = 60;
+            const basicColors = ['#ff0055', '#00ffcc', '#ffcc00', '#ff00ff', '#00ff00', '#00ffff', '#ffffff'];
+            const clusterColor = basicColors[Math.floor(Math.random() * basicColors.length)];
+            for(let i=0; i < numTia; i++) {
+                let goc = (Math.PI * 2 / numTia) * i + (Math.random() - 0.5) * 0.2;
+                let tocDo = Math.random() * 5 + 3;
+                fireworkExplosions.push({ x: targetX, y: targetY, vx: Math.cos(goc) * tocDo, vy: Math.sin(goc) * tocDo, size: Math.random() * 2.5 + 1.5, color: clusterColor, life: 1.0, decay: Math.random() * 0.015 + 0.01, hasSpark: Math.random() < 0.4 });
+            }
+        }
+
+        function toggleMobileLeaderboard() {
+            const lb = document.getElementById('leaderboard');
+            const btn = document.getElementById('toggle-lb-btn');
+            if (lb.classList.contains('open')) {
+                lb.classList.remove('open');
+                btn.innerText = "🏆 TOP"; btn.style.background = "#fbbf24";
+            } else {
+                lb.classList.add('open'); btn.innerText = "❌ ĐÓNG"; btn.style.background = "#ef4444"; btn.style.color = "white";
+            }
+        }
+
+        // Thực thi bấm nút Skill (Yêu cầu 3)
+        function triggerSpeedSkill() {
+            if (!gameRunning || isSkillInCooldown) return;
+            
+            // Gửi yêu cầu lên server duyệt
+            socket.emit('activateSpeedSkill');
+        }
+
+        // Server xác nhận kích hoạt thành công, chạy đồng bộ Client (Yêu cầu 3)
+        socket.on('speedSkillActivatedConfirmed', () => {
+            isSkillInCooldown = true;
+            skillActiveDurationLeft = 7; // Kéo dài trong 7s
+            skillCooldownTimeLeft = 20;  // Hồi chiêu 20s tổng cộng
+
+            speedBtn.classList.add('cooldown');
+            speedLabel.innerText = "RUNNING";
+            speedCdText.style.display = "block";
+            speedCdText.innerText = skillActiveDurationLeft + "s";
+            
+            speedSecondsSpan.innerText = skillActiveDurationLeft;
+            speedTimerUi.style.display = 'block';
+
+            playSound('item'); // Kích âm thanh tốc độ đặc trưng vốn có
+
+            if (skillTimerInterval) clearInterval(skillTimerInterval);
+            
+            skillTimerInterval = setInterval(() => {
+                if (skillActiveDurationLeft > 0) {
+                    skillActiveDurationLeft--;
+                    speedSecondsSpan.innerText = skillActiveDurationLeft;
+                    speedCdText.innerText = skillActiveDurationLeft + "s";
+                    
+                    if (skillActiveDurationLeft <= 0) {
+                        speedTimerUi.style.display = 'none';
+                        speedLabel.innerText = "COOLDOWN";
+                    }
+                }
+                
+                // Quản lý tiến trình Hồi chiêu tổng thể (20s)
+                if (skillCooldownTimeLeft > 0) {
+                    skillCooldownTimeLeft--;
+                    
+                    // Vẽ tỷ lệ bóng phủ mờ mượt mà
+                    let percent = ((20 - skillCooldownTimeLeft) / 20) * 100;
+                    speedCdOverlay.style.height = (100 - percent) + "%";
+
+                    if (skillActiveDurationLeft <= 0) {
+                        speedCdText.innerText = skillCooldownTimeLeft + "s";
+                    }
+
+                    if (skillCooldownTimeLeft <= 0) {
+                        clearInterval(skillTimerInterval);
+                        isSkillInCooldown = false;
+                        speedBtn.classList.remove('cooldown');
+                        speedLabel.innerText = "⚡ X3";
+                        speedCdText.style.display = "none";
+                        speedCdOverlay.style.height = "0%";
+                    }
+                }
+            }, 1000);
         });
 
-        window.addEventListener('touchstart', (e) => {
-            if (!gameRunning) return;
-            let touch = e.touches[0];
-            updateMouseAngle(touch.clientX, touch.clientY);
-        }, { passive: true });
+        socket.on('initPlayerName', (res) => {
+            myConfirmedName = res.confirmedName;
+            document.getElementById('p-name').innerText = myConfirmedName + ":";
+        });
 
-        window.addEventListener('touchmove', (e) => {
+        socket.on('gameTick', (data) => {
             if (!gameRunning) return;
-            let touch = e.touches[0];
-            updateMouseAngle(touch.clientX, touch.clientY);
-        }, { passive: true });
+            serverPlayers = data.players;
+            serverCubes = data.cubes;
+            serverItems = data.items || [];
+            updateLeaderboard();
 
-        function updateMouseAngle(clientX, clientY) {
-            let centerX = window.innerWidth / 2;
-            let centerY = window.innerHeight / 2;
-            targetAngle = Math.atan2(clientY - centerY, clientX - centerX);
-            // Gửi đồng bộ lên Server (Bỏ hoàn toàn biến isMouseDown cũ)
-            socket.emit('updateInput', { angle: targetAngle });
+            let me = serverPlayers[socket.id];
+            if (me && !me.alive) {
+                // Nếu bị tiêu diệt thì reset hiển thị kĩ năng chạy
+                speedTimerUi.style.display = 'none';
+            }
+        });
+
+        socket.on('playClientSound', (res) => {
+            if (!gameRunning) return;
+            if (res.playerId === socket.id) {
+                if (res.type === 'merge') {
+                    let baseFreq = 150 + (Math.log2(res.val || 2) * 35);
+                    playSound('merge', baseFreq);
+                } else if (res.type === 'bomb') {
+                    playSound('bomb');
+                } else {
+                    playSound('item');
+                }
+                if (res.floatingText) {
+                    floatingTexts.push({ text: res.floatingText, color: res.color || '#fff', x: width / 2, y: height / 2 - 40, alpha: 1.0 });
+                }
+            }
+        });
+
+        socket.on('triggerGlobalMegaFireworks', (res) => {
+            if (!gameRunning) return;
+            megaAlert.innerHTML = `🎉 CHÚC MỪNG CHIẾN THẦN [ ${res.killerName} ] ĐÃ ĐẠT ${res.killStreak} KILL LIÊN TIẾP - THỐNG TRỊ TOÀN BỘ ĐẤU TRƯỜNG MULTIPLAYER! 🎉`;
+            megaContainer.style.display = 'block';
+            let duration = 10000; let startTime = Date.now();
+            let fireworkTimer = setInterval(() => {
+                if (Date.now() - startTime > duration) {
+                    clearInterval(fireworkTimer); megaContainer.style.display = 'none'; megaAlert.innerHTML = "";
+                } else {
+                    let randomMapX = Math.random() * 3400 + 100; let randomMapY = Math.random() * 3400 + 100;
+                    createFireworkCluster(randomMapX, randomMapY);
+                }
+            }, 200);
+        });
+
+        socket.on('playerKilled', (res) => {
+            if (!gameRunning) return;
+            if (res.killerId === socket.id) { playSound('kill'); }
+            killFeed.innerHTML = `⚔️ <span style="color:#fbbf24">${res.killerName}</span> đã NUỐT CHỬNG/HẠ GỤC <span style="color:#94a3b8">${res.victimName}</span>! (Chuỗi: ${res.killStreak})`;
+            setTimeout(() => { killFeed.innerHTML = ""; }, 4000);
+            let killerPlayer = serverPlayers[res.killerId];
+            let bombX = Math.random() * 600 + 1100; let bombY = Math.random() * 600 + 1100;
+            if(killerPlayer && killerPlayer.body && killerPlayer.body[0]) { bombX = killerPlayer.body[0].x; bombY = killerPlayer.body[0].y; }
+            if (res.fireworks) { createFireworkCluster(bombX, bombY); }
+        });
+
+        socket.on('respawnCountdown', (res) => {
+            megaContainer.style.display = 'none';
+            let canvasCenterContainer = document.createElement('div');
+            canvasCenterContainer.id = "respawn-box";
+            canvasCenterContainer.style.position = "absolute";
+            canvasCenterContainer.style.top = "40%"; canvasCenterContainer.style.left = "50%"; canvasCenterContainer.style.transform = "translate(-50%, -50%)"; canvasCenterContainer.style.textAlign = "center"; canvasCenterContainer.style.zIndex = "95";
+            document.body.appendChild(canvasCenterContainer);
+            let timeLeft = res.delay;
+            if(countdownTimerInterval) clearInterval(countdownTimerInterval);
+            countdownTimerInterval = setInterval(() => {
+                canvasCenterContainer.innerHTML = `<span style="color:#ef4444; font-size:24px; font-weight:bold; text-shadow:0 0 8px black;">Bạn đã bị hạ gục!</span><br><span style="font-size:16px; color:#fff; text-shadow:0 0 8px black;">Tự động hồi sinh sau: <b style="color:#fbbf24; font-size:22px;">${timeLeft}s</b></span><br><span style="font-size:11px; color:#9ca3af; text-shadow:0 0 8px black;">(Thời gian hình phạt lũy tiến)</span>`;
+                timeLeft--;
+                if(timeLeft < 0) { clearInterval(countdownTimerInterval); if(document.getElementById("respawn-box")) document.getElementById("respawn-box").remove(); }
+            }, 1000);
+        });
+
+        socket.on('respawnSuccess', () => {
+            if(countdownTimerInterval) clearInterval(countdownTimerInterval);
+            if(document.getElementById("respawn-box")) document.getElementById("respawn-box").remove();
+        });
+
+        function updateLeaderboard() {
+            let sorted = Object.values(serverPlayers).filter(p => p.alive).sort((a,b) => (b.body[0]?b.body[0].value:0) - (a.body[0]?a.body[0].value:0));
+            lbContent.innerHTML = sorted.slice(0, 10).map((p, i) => {
+                let isMe = p.id === socket.id;
+                let styleClass = isMe ? 'lb-item lb-you' : 'lb-item';
+                let rankLabel = (i === 0) ? `🥇 ` : (i === 1) ? `🥈 ` : (i === 2) ? `🥉 ` : `${i+1}. `;
+                return `<div class="${styleClass}"> <span class="${i===0?'lb-top1':''}">${rankLabel}${p.name}</span> <span>${formatNumber(p.body[0]?p.body[0].value:2)}</span> </div>`;
+            }).join('');
+        }
+
+        function getPlayerRankId(rankIndex) {
+            let activePlayers = Object.values(serverPlayers).filter(p => p.alive);
+            if (activePlayers.length <= rankIndex) return null;
+            activePlayers.sort((a, b) => (b.body[0]?b.body[0].value:0) - (a.body[0]?a.body[0].value:0));
+            return activePlayers[rankIndex].id;
+        }
+
+        function drawCube(node, isHead, name, isMe, baseScale = 1.0, rankStatus = 0) {
+            let baseSize = 42; let finalSize = baseSize * baseScale;
+            ctx.save(); ctx.translate(node.x, node.y);
+            if (isHead && rankStatus === 1) { ctx.shadowBlur = 25; ctx.shadowColor = `hsl(${rainbowHue}, 100%, 60%)`; }
+            else if (isHead && (rankStatus === 2 || rankStatus === 3)) { ctx.shadowBlur = 20; ctx.shadowColor = rankStatus === 2 ? `hsl(${(rainbowHue + 60) % 360}, 90%, 65%)` : `hsl(${(rainbowHue + 180) % 360}, 85%, 60%)`; }
+            else { ctx.shadowBlur = isMe ? 18 : 5; ctx.shadowColor = isMe ? "#fbbf24" : "rgba(0,0,0,0.4)"; }
+            ctx.beginPath();
+            if (typeof ctx.roundRect === 'function') { ctx.roundRect(-finalSize / 2, -finalSize / 2, finalSize, finalSize, Math.max(2, 6 + (baseScale * 2))); }
+            else { ctx.rect(-finalSize / 2, -finalSize / 2, finalSize, finalSize); }
+            if (isHead && rankStatus === 1) {
+                let grad = ctx.createLinearGradient(-finalSize/2, -finalSize/2, finalSize/2, finalSize/2);
+                grad.addColorStop(0, `hsl(${rainbowHue}, 90%, 50%)`); grad.addColorStop(1, `hsl(${(rainbowHue + 120) % 360}, 90%, 40%)`); ctx.fillStyle = grad;
+            } else if (isHead && rankStatus === 2) {
+                let grad = ctx.createLinearGradient(-finalSize/2, finalSize/2, finalSize/2, -finalSize/2);
+                grad.addColorStop(0, `hsl(${(rainbowHue + 45) % 360}, 95%, 55%)`); grad.addColorStop(1, `hsl(${(rainbowHue + 165) % 360}, 90%, 45%)`); ctx.fillStyle = grad;
+            } else if (isHead && rankStatus === 3) {
+                let grad = ctx.createLinearGradient(0, -finalSize/2, 0, finalSize/2);
+                grad.addColorStop(0, `hsl(${(rainbowHue + 135) % 360}, 85%, 50%)`); grad.addColorStop(1, `hsl(${(rainbowHue + 285) % 360}, 80%, 40%)`); ctx.fillStyle = grad;
+            } else { ctx.fillStyle = colors[node.value] || '#333'; }
+            ctx.fill();
+            if (isHead && rankStatus === 1) { ctx.strokeStyle = `hsl(${(rainbowHue + 180) % 360}, 100%, 70%)`; ctx.lineWidth = 3.0; }
+            else if (isHead && (rankStatus === 2 || rankStatus === 3)) { ctx.strokeStyle = '#ffffff'; ctx.lineWidth = 2.2; }
+            else { ctx.strokeStyle = 'rgba(255,255,255,0.25)'; ctx.lineWidth = 1.5; }
+            ctx.stroke(); ctx.fillStyle = 'white'; ctx.font = `bold ${13 + (baseScale * 1.5)}px Arial`; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText(formatNumber(node.value), 0, 0);
+            if(isHead) {
+                if (rankStatus === 1) ctx.fillStyle = `hsl(${rainbowHue}, 100%, 75%)`;
+                else if (rankStatus === 2) ctx.fillStyle = '#fef08a';
+                else if (rankStatus === 3) ctx.fillStyle = '#93c5fd';
+                else ctx.fillStyle = isMe ? '#fef08a' : '#cbd5e1';
+                ctx.font = `bold 12px Arial`; ctx.fillText(name, 0, -finalSize/2 - 10);
+            }
+            ctx.restore();
+        }
+
+        function drawItem(it) {
+            ctx.save(); ctx.translate(it.x, it.y);
+            ctx.shadowBlur = 10;
+            if (it.type === 'x2') { ctx.shadowColor = '#22c55e'; ctx.fillStyle = '#22c55e'; }
+            else if (it.type === '/2') { ctx.shadowColor = '#ef4444'; ctx.fillStyle = '#ef4444'; }
+            else if (it.type === 'bomb') { ctx.shadowColor = '#a855f7'; ctx.fillStyle = '#a855f7'; }
+            ctx.beginPath(); ctx.arc(0, 0, 14, 0, Math.PI * 2); ctx.fill();
+            ctx.strokeStyle = '#fff'; ctx.lineWidth = 2; ctx.stroke();
+            ctx.fillStyle = '#fff'; ctx.font = '9px Arial'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+            let label = it.type.toUpperCase(); ctx.fillText(label, 0, 0); ctx.restore();
+        }
+
+        function animate() {
+            if (!gameRunning) return;
+            requestAnimationFrame(animate);
+            rainbowHue = (rainbowHue + 1) % 360;
+            ctx.fillStyle = '#030712'; ctx.fillRect(0, 0, width, height);
+
+            let me = serverPlayers[socket.id];
+            let camX = 1800, camY = 1800;
+            if (me && me.body && me.body[0]) { camX = me.body[0].x; camY = me.body[0].y; }
+
+            ctx.save(); ctx.translate(width / 2 - camX, height / 2 - camY);
+
+            // BẢN ĐỒ ARENA BOUNDARY
+            ctx.strokeStyle = 'rgba(251,191,36,0.35)'; ctx.lineWidth = 6; ctx.strokeRect(0, 0, 3600, 3600);
+            ctx.strokeStyle = 'rgba(31,41,55,0.4)'; ctx.lineWidth = 1;
+            for (let x = 200; x < 3600; x += 200) { ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, 3600); ctx.stroke(); }
+            for (let y = 200; y < 3600; y += 200) { ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(3600, y); ctx.stroke(); }
+
+            // STAR DUST BACKGROUND
+            starDustParticles.forEach(p => {
+                ctx.fillStyle = `rgba(255, 255, 255, ${p.alpha})`;
+                ctx.beginPath(); ctx.arc(p.x, p.y, p.size, 0, Math.PI*2); ctx.fill();
+            });
+
+            // VẼ CÁC KHỐI ĐIỂM SỐ
+            serverCubes.forEach(c => {
+                let size = 20 * calculateNodeScale(c.value);
+                ctx.fillStyle = colors[c.value] || '#555'; ctx.beginPath();
+                if (typeof ctx.roundRect === 'function') { ctx.roundRect(c.x - size/2, c.y - size/2, size, size, 4); ctx.fill(); }
+                else { ctx.fillRect(c.x - size/2, c.y - size/2, size, size); }
+                ctx.strokeStyle = 'rgba(255,255,255,0.15)'; ctx.lineWidth = 1; ctx.strokeRect(c.x - size/2, c.y - size/2, size, size);
+                ctx.fillStyle = '#fff'; ctx.font = '10px Arial'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+                ctx.fillText(formatNumber(c.value), c.x, c.y);
+            });
+
+            // VẼ VẬT PHẨM TỒN TẠI
+            serverItems.forEach(it => { drawItem(it); });
+
+            // XÁC ĐỊNH HẠNG TOP KHỐI
+            let top1Id = getPlayerRankId(0); let top2Id = getPlayerRankId(1); let top3Id = getPlayerRankId(2);
+
+            // VẼ ĐỐI THỦ VÀ BOT TRƯỚC
+            Object.values(serverPlayers).forEach(p => {
+                if (!p.alive || p.id === socket.id || p.body.length === 0) return;
+                let rStatus = (p.id === top1Id) ? 1 : (p.id === top2Id) ? 2 : (p.id === top3Id) ? 3 : 0;
+                for (let i = p.body.length - 1; i >= 0; i--) {
+                    if (!p.body[i]) continue;
+                    drawCube(p.body[i], i === 0, p.name, false, p.body[i].baseScale || 1.0, rStatus);
+                }
+            });
+
+            // VẼ NGƯỜI CHƠI CHÍNH ĐÈ LÊN TRÊN CÙNG
+            if (me && me.alive && me.body.length > 0) {
+                let myRStatus = (socket.id === top1Id) ? 1 : (socket.id === top2Id) ? 2 : (socket.id === top3Id) ? 3 : 0;
+                if (me.body[0]) {
+                    let headNode = me.body[0];
+                    document.getElementById('chain-text').innerText = formatNumber(headNode.value);
+                }
+                for (let i = me.body.length - 1; i >= 0; i--) {
+                    if (!me.body[i]) continue;
+                    drawCube(me.body[i], i === 0, me.name, true, me.body[i].baseScale || 1.0, myRStatus);
+                }
+            }
+
+            // PHÁO HOA HIỆU ỨNG RỰC RỠ
+            for (let i = fireworkExplosions.length - 1; i >= 0; i--) {
+                let f = fireworkExplosions[i]; f.x += f.vx; f.y += f.vy; f.vy += 0.03; f.life -= f.decay;
+                if (f.life <= 0) { fireworkExplosions.splice(i, 1); continue; }
+                ctx.save(); ctx.globalAlpha = f.life; ctx.fillStyle = f.color; ctx.beginPath(); ctx.arc(f.x, f.y, f.size, 0, Math.PI * 2); ctx.fill();
+                if (f.hasSpark && Math.random() < 0.2) { ctx.fillStyle = '#fff'; ctx.fillRect(f.x + (Math.random()-0.5)*10, f.y + (Math.random()-0.5)*10, 1.5, 1.5); }
+                ctx.restore();
+            }
+            ctx.restore();
+
+            // CHỮ NỔI FLOATING TEXT TRÊN GIAO DIỆN MÀN HÌNH CHÍNH
+            for (let i = floatingTexts.length - 1; i >= 0; i--) {
+                let ft = floatingTexts[i]; ft.y -= 0.8; ft.alpha -= 0.015;
+                if (ft.alpha <= 0) { floatingTexts.splice(i, 1); continue; }
+                ctx.save(); ctx.globalAlpha = ft.alpha; ctx.fillStyle = ft.color; ctx.font = 'bold 18px Arial'; ctx.textAlign = 'center'; ctx.fillText(ft.text, ft.x, ft.y); ctx.restore();
+            }
         }
 
         startBtn.onclick = () => {
-            const name = nameInput.value.trim() || "Player";
+            let name = nameInput.value.trim();
+            try { audioCtx.resume(); } catch(e) {}
             startScreen.style.display = 'none';
-            uiDiv.style.display = 'block';
+            document.getElementById('ui').style.display = 'block';
+            speedBtn.style.display = 'flex'; // Hiện nút kĩ năng khi vào đấu trường (Yêu cầu 3)
             
-            // Hiện nút bấm tăng tốc khi vào trận đấu
-            dashBtn.style.display = 'block';
+            if (window.innerWidth <= 768) { document.getElementById('toggle-lb-btn').style.display = 'block'; }
+            else { document.getElementById('leaderboard').style.display = 'block'; }
             
-            if (window.innerWidth <= 768) {
-                toggleLbBtn.style.display = 'block';
-            } else {
-                leaderboardDiv.style.display = 'block';
-            }
             if (audioCtx.state === 'suspended') audioCtx.resume();
-
             gameRunning = true;
             socket.emit('joinGame', { name: name });
             setTimeout(() => { resize(); window.scrollTo(0, 1); }, 400);
             animate();
         };
 
-        socket.on('respawnData', (data) => {
-            if (socket.id && serverPlayers && serverPlayers[socket.id]) {
-                serverPlayers[socket.id] = data;
-            }
-        });
-
-        socket.on('playClientSound', (data) => {
-            if (data.floatingText) {
-                let p = players[data.playerId];
-                if (p && p.body && p.body.length > 0) {
-                    floatingTexts.push({
-                        x: p.body[0].x,
-                        y: p.body[0].y - 40,
-                        text: data.floatingText,
-                        color: data.color || '#fbbf24',
-                        alpha: 1.0,
-                        life: 70
-                    });
-                }
-            }
-            if (data.playerId !== socket.id) return;
-            if (data.type === 'x2') playTone(523.25, 'sine', 0.15);
-            else if (data.type === 'div2') playTone(293.66, 'sine', 0.2);
-            else if (data.type === 'merge') { playTone(440, 'triangle', 0.1); setTimeout(() => playTone(554.37, 'triangle', 0.15), 80); }
-            else if (data.type === 'bomb') { playTone(120, 'sawtooth', 0.4); }
-            else if (data.type === 'speed') { playTone(659.25, 'sine', 0.1); setTimeout(() => playTone(783.99, 'sine', 0.15), 60); }
-        });
-
-        socket.on('playerDied', (data) => {
-            let msg = "";
-            if (data.isBomb) {
-                msg = `💥 <span style="color:#ef4444;font-weight:bold;">${data.name}</span> đã dẫm phải BOMB nổ banh xác!`;
-            } else {
-                msg = `⚔️ <span style="color:#fbbf24;font-weight:bold;">${data.killer}</span> đã NUỐT CHỬNG/HẠ GỤC <span style="color:#94a3b8;">${data.name}</span>! (Chuỗi: ${data.streak})`;
-            }
-            let div = document.createElement('div');
-            div.className = 'feed-msg';
-            div.innerHTML = msg;
-            killFeed.appendChild(div);
-            if (killFeed.children.length > 4) { killFeed.removeChild(killFeed.children[0]); }
-            setTimeout(() => { if (div.parentNode) div.parentNode.removeChild(div); }, 4000);
-        });
-
-        let lastServerState = null;
-        socket.on('updateState', (state) => { lastServerState = state; });
-
-        function drawGrid(camX, camY) {
-            ctx.strokeStyle = '#1e293b';
-            ctx.lineWidth = 1;
-            const gridSize = 50;
-            let startX = Math.floor((camX - canvas.width / 2) / gridSize) * gridSize;
-            let endX = Math.ceil((camX + canvas.width / 2) / gridSize) * gridSize;
-            let startY = Math.floor((camY - canvas.height / 2) / gridSize) * gridSize;
-            let endY = Math.ceil((camY + canvas.height / 2) / gridSize) * gridSize;
-
-            for (let x = startX; x <= endX; x++) {
-                if (x < 0 || x > MAP_WIDTH) continue;
-                ctx.beginPath(); ctx.moveTo(canvas.width / 2 + (x - camX), 0); ctx.lineTo(canvas.width / 2 + (x - camX), canvas.height); ctx.stroke();
-            }
-            for (let y = startY; y <= endY; y++) {
-                if (y < 0 || y > MAP_HEIGHT) continue;
-                ctx.beginPath(); ctx.moveTo(0, canvas.height / 2 + (y - camY)); ctx.lineTo(canvas.width, canvas.height / 2 + (y - camY)); ctx.stroke();
-            }
-            ctx.strokeStyle = '#ef4444'; ctx.lineWidth = 5; ctx.strokeRect(canvas.width / 2 - camX, canvas.height / 2 - camY, MAP_WIDTH, MAP_HEIGHT);
-        }
-
-        function getColorByValue(val) {
-            const colors = {
-                2: ['#3b82f6', '#1d4ed8'], 4: ['#10b981', '#047857'], 8: ['#f59e0b', '#b45309'],
-                16: ['#06b6d4', '#0e7490'], 32: ['#14b8a6', '#0f766e'], 64: ['#8b5cf6', '#6d28d9'],
-                128: ['#ec4899', '#be185d'], 256: ['#f43f5e', '#be123c'], 512: ['#e11d48', '#9f1239'],
-                1024: ['#65a30d', '#3f6212'], 2048: ['#eab308', '#854d0e']
-            };
-            return colors[val] || ['#ef4444', '#991b1b'];
-        }
-
-        function drawCubeNode(cx, cy, val, scale, isHead, angle, name, isSelf, streak) {
-            let r = 24 * scale;
-            ctx.save(); ctx.translate(cx, cy);
-            if (isHead) ctx.rotate(angle);
-
-            let grads = getColorByValue(val);
-            let g = ctx.createLinearGradient(-r, -r, r, r);
-            g.addColorStop(0, grads[0]); g.addColorStop(1, grads[1]);
-            ctx.fillStyle = g;
-
-            ctx.shadowBlur = isSelf ? 20 : 10;
-            ctx.shadowColor = grads[0];
-
-            ctx.beginPath(); ctx.roundRect(-r, -r, r * 2, r * 2, r * 0.35); ctx.fill();
-            ctx.shadowBlur = 0;
-            ctx.strokeStyle = '#ffffff'; ctx.lineWidth = isHead ? 3 : 1.5;
-            ctx.beginPath(); ctx.roundRect(-r, -r, r * 2, r * 2, r * 0.35); ctx.stroke();
-
-            if (isHead) {
-                ctx.fillStyle = '#ffffff'; ctx.beginPath(); ctx.arc(r * 0.35, -r * 0.4, r * 0.18, 0, Math.PI * 2); ctx.arc(r * 0.35, r * 0.4, r * 0.18, 0, Math.PI * 2); ctx.fill();
-                ctx.fillStyle = '#000000'; ctx.beginPath(); ctx.arc(r * 0.42, -r * 0.4, r * 0.08, 0, Math.PI * 2); ctx.arc(r * 0.42, r * 0.4, r * 0.08, 0, Math.PI * 2); ctx.fill();
-            }
-
-            ctx.restore();
-            ctx.save(); ctx.translate(cx, cy);
-            ctx.fillStyle = '#ffffff'; ctx.font = `bold ${Math.max(11, r * 0.7)}px sans-serif`;
-            ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-            ctx.fillText(val, 0, 0); ctx.restore();
-
-            if (isHead) {
-                ctx.save(); ctx.translate(cx, cy);
-                ctx.fillStyle = isSelf ? '#fbbf24' : '#ffffff';
-                ctx.font = 'bold 13px sans-serif'; ctx.textAlign = 'center';
-                let tag = name;
-                if (streak >= 3) { tag = `🔥 ${streak} ${name}`; }
-                ctx.fillText(tag, 0, -r - 12); ctx.restore();
-            }
-        }
-
-        function drawItem(cx, cy, type) {
-            ctx.save(); ctx.translate(cx, cy);
-            let r = 16;
-            let bg = '#1e293b', txt = '?', border = '#ffffff';
-            if (type === 'x2') { bg = '#3b82f6'; txt = 'x2'; border = '#60a5fa'; }
-            else if (type === '/2') { bg = '#ef4444'; txt = '÷2'; border = '#f87171'; }
-            else if (type === 'bomb') { bg = '#111827'; txt = 'BOMB'; border = '#ef4444'; }
-
-            ctx.shadowBlur = 8; ctx.shadowColor = bg;
-            ctx.fillStyle = bg; ctx.beginPath(); ctx.roundRect(-r, -r, r * 2, r * 2, 6); ctx.fill();
-            ctx.shadowBlur = 0;
-            ctx.strokeStyle = border; ctx.lineWidth = 2; ctx.beginPath(); ctx.roundRect(-r, -r, r * 2, r * 2, 6); ctx.stroke();
-
-            if (type === 'bomb') {
-                ctx.fillStyle = '#ef4444'; ctx.font = 'bold 9px sans-serif';
-            } else {
-                ctx.fillStyle = '#ffffff'; ctx.font = 'bold 12px sans-serif';
-            }
-            ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText(txt, 0, 0);
-            ctx.restore();
-        }
-
-        function animate() {
-            if (!gameRunning) return;
-            requestAnimationFrame(animate);
-
-            if (lastServerState) { players = lastServerState.players; cubes = lastServerState.cubes; }
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-            let myPlayer = players[socket.id];
-            let camX = MAP_WIDTH / 2, camY = MAP_HEIGHT / 2;
-            if (myPlayer && myPlayer.alive && myPlayer.body && myPlayer.body.length > 0) {
-                camX = myPlayer.body[0].x; camY = myPlayer.body[0].y;
-                let headVal = myPlayer.body[0].value;
-                let score = 0; myPlayer.body.forEach(s => score += s.value);
-                uiDiv.innerText = `${myPlayer.name}: ${headVal} - Tổng điểm: ${score}`;
-            } else {
-                uiDiv.innerText = "Đang đợi hồi sinh...";
-            }
-
-            drawGrid(camX, camY);
-
-            cubes.forEach(c => {
-                let cx = canvas.width / 2 + (c.x - camX);
-                let cy = canvas.height / 2 + (c.y - camY);
-                if (cx >= -30 && cx <= canvas.width + 30 && cy >= -30 && cy <= canvas.height + 30) { drawItem(cx, cy, c.type); }
-            });
-
-            let sortedPlayers = Object.values(players).filter(p => p.alive);
-            sortedPlayers.sort((a, b) => { let sA = 0, sB = 0; if (a.body[0]) sA = a.body[0].value; if (b.body[0]) sB = b.body[0].value; return sA - sB; });
-
-            sortedPlayers.forEach(p => {
-                if (!p.body || p.body.length === 0) return;
-                for (let i = p.body.length - 1; i >= 0; i--) {
-                    let seg = p.body[i];
-                    let cx = canvas.width / 2 + (seg.x - camX);
-                    let cy = canvas.height / 2 + (seg.y - camY);
-                    if (cx >= -100 && cx <= canvas.width + 100 && cy >= -100 && cy <= canvas.height + 100) {
-                        drawCubeNode(cx, cy, seg.value, seg.baseScale, i === 0, p.angle, p.name, p.id === socket.id, p.killStreak);
-                    }
-                }
-            });
-
-            for (let i = floatingTexts.length - 1; i >= 0; i--) {
-                let ft = floatingTexts[i]; ft.life--; ft.y -= 0.6;
-                ctx.save(); ctx.fillStyle = ft.color; ctx.font = 'bold 16px sans-serif';
-                ctx.textAlign = 'center'; ctx.globalAlpha = Math.max(0, ft.life / 70);
-                let cx = canvas.width / 2 + (ft.x - camX); let cy = canvas.height / 2 + (ft.y - camY);
-                ctx.fillText(ft.text, cx, cy); ctx.restore();
-                if (ft.life <= 0) floatingTexts.splice(i, 1);
-            }
-
-            let lbArr = Object.values(players).filter(p => p.alive).map(p => {
-                let sum = 0; p.body.forEach(s => sum += s.value);
-                return { name: p.name, id: p.id, score: sum };
-            });
-            lbArr.sort((a, b) => b.score - a.score);
-            let top10 = lbArr.slice(0, 10);
-
-            let html = '';
-            top10.forEach((item, index) => {
-                let isSelf = (item.id === socket.id) ? ' self' : '';
-                let rankIcon = (index === 0) ? '🥇 ' : (index === 1) ? '🥈 ' : (index === 2) ? '🥉 ' : `${index + 1}. `;
-                let displayScore = item.score >= 1000 ? (item.score / 1000).toFixed(1) + 'K' : item.score;
-                html += `<div class="lb-item${isSelf}"><span>${rankIcon}${item.name}</span><span>${displayScore}</span></div>`;
-            });
-            lbContent.innerHTML = html;
-        }
+        // Ghi nhận góc điều hướng chuột/touch di chuyển thông thường
+        const moveInput = (e) => {
+            if(!gameRunning) return;
+            const x = e.touches ? e.touches[0].clientX : e.clientX;
+            const y = e.touches ? e.touches[0].clientY : e.clientY;
+            myAngle = Math.atan2(y - height/2, x - width/2);
+            socket.emit('updateInput', { angle: myAngle });
+        };
+        
+        window.addEventListener('mousemove', moveInput);
+        window.addEventListener('touchmove', (e) => { if(gameRunning) e.preventDefault(); moveInput(e); }, {passive:false});
+        
+        // Yêu cầu 1: Triệt tiêu hoàn toàn mousedown/touchstart liên quan đến tăng tốc cũ
+        window.addEventListener('mousedown', () => {});
+        window.addEventListener('mouseup', () => {});
+        window.addEventListener('touchstart', () => {});
     </script>
 </body>
 </html>
