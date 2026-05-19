@@ -34,7 +34,7 @@ function spawnCube() {
 }
 
 function spawnItem(type) {
-    // Yêu cầu 2: Loại bỏ vật phẩm tăng tốc (speed), chỉ random 3 loại còn lại: x2, /2, bomb
+    // Yêu cầu 2: Loại bỏ vật phẩm tăng tốc (speed), chỉ lấy ngẫu nhiên 3 loại: x2, /2, bomb
     let t = type || ['x2', '/2', 'bomb'][Math.floor(Math.random() * 3)];
     serverItems.push({
         id: Math.random().toString(36).substring(2, 9),
@@ -133,7 +133,7 @@ function handlePlayerDeath(playerId) {
             if (reCheck && !reCheck.alive) {
                 reCheck.alive = true;
                 reCheck.killStreak = 0;
-                reCheck.skillSpeedActive = false; // Reset kĩ năng khi hồi sinh
+                reCheck.skillSpeedActive = false; // Reset trạng thái kĩ năng khi hồi sinh
                 let rx = Math.random() * (MAP_WIDTH - 600) + 300;
                 let ry = Math.random() * (MAP_HEIGHT - 600) + 300;
                 reCheck.body = [{ x: rx, y: ry, value: 2, baseScale: 1.0 }];
@@ -158,7 +158,7 @@ function spawnBot() {
         isBot: true,
         alive: true,
         angle: Math.random() * Math.PI * 2,
-        isMouseDown: false, // Ngăn chặn bot kích hoạt chuột nhấp tăng tốc cũ
+        isMouseDown: false,
         skillSpeedActive: false, 
         skillSpeedTimer: 0,
         killCount: 0,
@@ -184,8 +184,8 @@ io.on('connection', (socket) => {
             alive: true,
             angle: 0,
             isMouseDown: false,
-            skillSpeedActive: false, // Trạng thái kích hoạt tăng tốc x3 mới
-            skillSpeedTimer: 0,      // Bộ đếm thời gian hiệu lực chạy trên server
+            skillSpeedActive: false, // Quản lý kĩ năng x3 mới
+            skillSpeedTimer: 0,
             killCount: 0,
             killStreak: 0,
             body: [{ x: Math.random() * (MAP_WIDTH - 600) + 300, y: Math.random() * (MAP_HEIGHT - 600) + 300, value: 2, baseScale: 1.0 }]
@@ -197,18 +197,17 @@ io.on('connection', (socket) => {
         let p = serverPlayers[socket.id];
         if (p && p.alive) {
             p.angle = data.angle || 0;
-            // Yêu cầu 1: Đã triệt tiêu hoàn toàn tính năng nhấp chuột/touch tăng tốc cũ
+            // Yêu cầu 1: Loại bỏ nhấp chuột/touch tăng tốc cũ
             p.isMouseDown = false; 
         }
     });
 
-    // Kích hoạt kĩ năng tăng tốc x3 từ nút bấm chuyên dụng
+    // Yêu cầu 3: Lắng nghe tín hiệu kích hoạt nút bấm tăng tốc từ Client
     socket.on('activateSpeedSkill', () => {
         let p = serverPlayers[socket.id];
-        // Nếu người chơi còn sống và kĩ năng đang không trong thời gian kích hoạt
         if (p && p.alive && !p.skillSpeedActive) {
             p.skillSpeedActive = true;
-            p.skillSpeedTimer = 7 * 60; // 7 giây chạy ở tần số quét 60 FPS = 420 ticks
+            p.skillSpeedTimer = 7 * 60; // Duy trì trong 7 giây (ở tần số vòng lặp 60 FPS)
             io.to(socket.id).emit('speedSkillActivatedConfirmed');
         }
     });
@@ -219,7 +218,7 @@ io.on('connection', (socket) => {
     });
 });
 
-// VÒNG LẶP VẬT LÝ CHÍNH CỦA SERVER (60 FPS)
+// VÒNG LẶP VẬT LÝ CHÍNH (60 FPS)
 setInterval(() => {
     let players = Object.values(serverPlayers);
 
@@ -243,7 +242,6 @@ setInterval(() => {
                 p.botTargetId = null;
             }
             
-            // AI ngẫu nhiên kích hoạt tăng tốc x3 của riêng nó độc lập để tăng tính cạnh tranh
             if (Math.random() < 0.05 && !p.skillSpeedActive) {
                 p.skillSpeedActive = true;
                 p.skillSpeedTimer = 7 * 60;
@@ -272,14 +270,14 @@ setInterval(() => {
 
         let speedFactor = 1.0;
         
-        // Yêu cầu 3: Nếu kĩ năng nút bấm x3 đang kích hoạt (trong 7 giây)
+        // Yêu cầu 3: Tính toán hệ số tốc độ khi bấm nút kĩ năng
         if (p.skillSpeedActive) {
-            speedFactor = 3.0; // Tăng tốc x3 lần tốc độ bình thường
+            speedFactor = 3.0; // Tăng x3 tốc độ
             p.skillSpeedTimer--;
             if (p.skillSpeedTimer <= 0) {
                 p.skillSpeedActive = false;
             }
-            // Giải quyết: Giữ nguyên speedFactor x3, hoàn toàn KHÔNG BỊ ĐỨT ĐUÔI (không cắt mảng body rớt khối)
+            // Giải quyết: Giữ nguyên speedFactor, hoàn toàn KHÔNG BỊ ĐỨT ĐUÔI (không cắt mảng để rớt khối)
         }
 
         let baseStep = 2.86 * speedFactor;
@@ -307,7 +305,7 @@ setInterval(() => {
             }
         }
 
-        // 3. VA CHẠM ĐẦU RẮN ĂN KHỐI ĐIỂM (CUBES) TRÊN BẢN ĐỒ
+        // 3. VA CHẠM ĂN KHỐI ĐIỂM
         for (let i = serverCubes.length - 1; i >= 0; i--) {
             let c = serverCubes[i];
             let cRadius = (28 * calculateNodeScale(c.value)) / 2;
@@ -324,7 +322,7 @@ setInterval(() => {
             }
         }
 
-        // 4. VA CHẠM ĐẦU RẮN ĂN VẬT PHẨM (ITEMS)
+        // 4. VA CHẠM ĂN VẬT PHẨM (ITEMS)
         for (let i = serverItems.length - 1; i >= 0; i--) {
             let it = serverItems[i];
             let dist = Math.hypot(head.x - it.x, head.y - it.y);
@@ -354,7 +352,7 @@ setInterval(() => {
         }
     });
 
-    // 5. XỬ LÝ VA CHẠM ĐẦU RẮN VỚI THÂN CỦA ĐỐI THỦ (KILL & DEATH)
+    // 5. XỬ LÝ VA CHẠM GIỮA CÁC ĐẦU VÀ THÂN RẮN
     let deadPlayersThisTick = new Set();
     for (let i = 0; i < players.length; i++) {
         let p1 = players[i];
@@ -369,7 +367,6 @@ setInterval(() => {
 
             for (let k = 0; k < p2.body.length; k++) {
                 if (k === 0) {
-                    // Đối đầu Head-to-Head
                     let head2 = p2.body[0];
                     let h2Radius = (BASE_HEAD_SIZE * (head2.baseScale || 1)) / 2;
                     let dist = Math.hypot(head1.x - head2.x, head1.y - head2.y);
@@ -386,13 +383,11 @@ setInterval(() => {
                         }
                     }
                 } else {
-                    // Đâm vào thân người khác
                     let bodyNode = p2.body[k];
                     let bRadius = (BASE_HEAD_SIZE * (bodyNode.baseScale || 1)) / 2;
                     let dist = Math.hypot(head1.x - bodyNode.x, head1.y - bodyNode.y);
                     if (dist < (h1Radius + bRadius) * 0.82) {
                         if (head1.value === bodyNode.value) {
-                            // Cùng cấp bậc, an toàn sát nhập ngược lại cấu trúc server
                             bodyNode.value *= 2;
                             io.emit('playClientSound', { playerId: p2.id, type: 'merge', val: bodyNode.value });
                             smartMergeOnServer(p2, 0, "none");
