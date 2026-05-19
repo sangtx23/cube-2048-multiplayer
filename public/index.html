@@ -12,99 +12,29 @@
             display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 100;
         }
         #name-input { padding: 12px; font-size: 18px; border-radius: 25px; border: 2px solid #fbbf24; width: 220px; text-align: center; margin-bottom: 15px; outline: none; background: #1f2937; color: white; }
-        #start-btn { padding: 12px 50px; font-size: 18px; background: #fbbf24; color: #000; border: none; border-radius: 25px; cursor: pointer; font-weight: bold; box-shadow: 0 0 15px #fbbf24; }
-        
-        /* GIAO DIỆN UI THÔNG MINH */
-        #ui { position: absolute; top: 12px; left: 12px; color: white; pointer-events: none; z-index: 10; display: none; font-size: 14px; text-shadow: 1px 1px 2px black; max-width: 45%; }
-        #ui br { display: none; } 
-        #ui #chain-text { margin-left: 5px; color: #fbbf24; font-weight: bold; }
-
-        /* BẢNG XẾP HẠNG TỰ CO GIÃN THEO THIẾT BỊ */
-        #leaderboard {
-            position: absolute; top: 12px; right: 12px; background: rgba(3, 7, 18, 0.9);
-            padding: 10px; border-radius: 10px; color: white; min-width: 200px; z-index: 95;
-            display: none; border: 1px solid #fbbf24; box-shadow: 0 0 12px rgba(251, 191, 36, 0.25);
-            transition: all 0.3s ease;
-        }
-        .lb-title { margin: 0 0 6px 0; text-align: center; color: #fbbf24; font-size: 14px; border-bottom: 1px dashed rgba(251, 191, 36, 0.4); padding-bottom: 4px; font-weight: bold; cursor: pointer; }
-        .lb-item { display: flex; justify-content: space-between; font-size: 12px; margin: 4px 0; padding: 2px 4px; border-radius: 4px; }
-        .lb-you { background: rgba(251, 191, 36, 0.2); color: #fde047; font-weight: bold; border: 1px dashed #fbbf24; }
-        .lb-top1 { color: #facc15; font-weight: bold; }
-        
-        /* Nút ẩn/hiển thị nhanh bảng xếp hạng dành riêng cho Mobile */
-        #toggle-lb-btn {
-            display: none; position: absolute; top: 12px; right: 12px; z-index: 96;
-            background: #fbbf24; color: black; border: none; padding: 8px 14px;
-            font-weight: bold; font-size: 13px; border-radius: 20px; cursor: pointer;
-            box-shadow: 0 0 8px #fbbf24;
-        }
-
-        #kill-feed { position: absolute; bottom: 20px; left: 12px; z-index: 10; color: #ef4444; font-weight: bold; font-size: 14px; text-shadow: 0 0 4px black; pointer-events: none; }
-        
-        /* Dải chữ thông báo Marquee */
-        #mega-announcement-container {
-            position: absolute; top: 20%; left: 0; width: 100%; overflow: hidden;
-            white-space: nowrap; pointer-events: none; z-index: 90; display: none;
-            background: rgba(239, 68, 68, 0.15); border-top: 2px dashed #f59e0b; border-bottom: 2px dashed #f59e0b;
-            padding: 8px 0;
-        }
-        #mega-announcement {
-            display: inline-block; font-size: 24px; font-weight: bold; color: #fde047;
-            text-shadow: 0 0 8px #ef4444, 0 0 18px #f59e0b;
-            animation: marqueeText 10s linear infinite;
-        }
-        #speed-timer-ui {
-            margin-top: 6px; padding: 4px 8px; background: rgba(0, 255, 255, 0.2);
-            border: 1px solid #00ffff; border-radius: 6px; display: none; color: #00ffff;
-            font-weight: bold; font-size: 12px; width: fit-content;
-            box-shadow: 0 0 6px rgba(0, 255, 255, 0.4);
-        }
-        @keyframes marqueeText {
-            0% { transform: translate3d(100%, 0, 0); }
-            100% { transform: translate3d(-100%, 0, 0); }
-        }
-
-        /* 📱 ĐIỀU CHỈNH ĐẶC BIỆT KHI CHƠI TRÊN ĐIỆN THOẠI (MÀN HÌNH < 768PX) */
-        @media (max-width: 768px) {
-            #leaderboard {
-                display: none !important; /* Mặc định giấu bảng xếp hạng to */
-                top: 55px; right: 12px; min-width: 180px; max-height: 55vh; overflow-y: auto;
-            }
-            #leaderboard.open { display: block !important; } /* Hiện bảng to khi bấm nút */
-            #toggle-lb-btn { display: block; } /* Bật nút kích hoạt nhanh */
-            #ui { font-size: 12px; top: 12px; }
-            #ui div:last-child { display: none !important; } /* Giấu dòng chữ hướng dẫn để lấy diện tích */
-            #mega-announcement { font-size: 16px; }
-        }
+        #start-btn { padding: 12px 50px; font-size: 18px; background: #fbbf24; color: black; font-weight: bold; border: none; border-radius: 25px; cursor: pointer; transition: 0.2s; box-shadow: 0 0 15px rgba(251,191,36,0.4); }
+        #start-btn:hover { background: #f59e0b; transform: scale(1.05); }
+        #ui { position: absolute; inset: 0; pointer-events: none; display: none; }
+        #leaderboard { position: absolute; top: 15px; right: 15px; background: rgba(17,24,39,0.85); padding: 15px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.1); color: white; width: 220px; box-shadow: 0 4px 20px rgba(0,0,0,0.5); display: none; }
+        .lb-title { font-weight: bold; color: #fbbf24; font-size: 16px; margin-bottom: 10px; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 5px; text-transform: uppercase; letter-spacing: 0.5px; }
+        .lb-item { display: flex; justify-content: space-between; font-size: 14px; margin-bottom: 4px; font-variant-numeric: tabular-nums; }
+        .lb-item.me { color: #38bdf8; font-weight: bold; }
     </style>
     <script src="/socket.io/socket.io.js"></script>
 </head>
 <body>
 
     <div id="start-screen">
-        <h1 style="color:white; margin-bottom:10px; letter-spacing: 2px; text-shadow: 0 0 10px #fbbf24; font-size: 24px;">2048 CUBE MULTIPLAYER</h1>
-        <p style="color: #9ca3af; font-size: 13px; margin-top: 0; margin-bottom: 20px;">Hào quang cầu vồng - Pháo hoa rực rỡ</p>
-        <input type="text" id="name-input" placeholder="Nhập tên của bạn..." maxlength="10">
-        <button id="start-btn">VÀO ĐẤU TRƯỜNG</button>
+        <h1 style="color: #fbbf24; margin-bottom: 30px; font-size: 32px; font-weight: 800; letter-spacing: 1px;">2048 CUBE ARENA</h1>
+        <input type="text" id="name-input" placeholder="Nhập tên của bạn..." maxlength="14">
+        <button id="start-btn">VÀO TRẬN</button>
     </div>
 
     <div id="ui">
-        <b id="p-name">Bạn:</b><span id="chain-text">2</span>
-        <div id="speed-timer-ui">⚡ TỐC ĐỘ CHẠY: <span id="speed-seconds">0</span>s</div>
-        <div style="margin-top: 6px; font-size: 11px; color: #a78bfa;">Chạm giữ hoặc nhấp chuột để Tăng Tốc (Dash)!</div>
-    </div>
-
-    <button id="toggle-lb-btn" onclick="toggleMobileLeaderboard()">🏆 TOP</button>
-
-    <div id="leaderboard">
-        <div class="lb-title" onclick="toggleMobileLeaderboard()">👑 TOP 10 ARENA KING</div>
-        <div id="lb-content"></div>
-    </div>
-
-    <div id="kill-feed"></div>
-    
-    <div id="mega-announcement-container">
-        <div id="mega-announcement"></div>
+        <div id="leaderboard">
+            <div class="lb-title">BẢNG XẾP HẠNG</div>
+            <div id="lb-list"></div>
+        </div>
     </div>
 
     <canvas id="gameCanvas"></canvas>
@@ -113,546 +43,217 @@
         const socket = io();
         const canvas = document.getElementById('gameCanvas');
         const ctx = canvas.getContext('2d');
+
+        let width = window.innerWidth;
+        let height = window.innerHeight;
+        canvas.width = width;
+        canvas.height = height;
+
+        window.addEventListener('resize', () => {
+            width = window.innerWidth;
+            height = window.innerHeight;
+            canvas.width = width;
+            canvas.height = height;
+        });
+
+        let gameRunning = false;
+        let myAngle = 0;
+        let isMouseDown = false;
+        let lastClientDashTime = 0; // Biến lưu mốc thời gian tăng tốc của Client
+
+        let players = {};
+        let cubes = [];
+        let items = [];
+
         const startScreen = document.getElementById('start-screen');
-        const nameInput = document.getElementById('name-input');
         const startBtn = document.getElementById('start-btn');
-        const lbContent = document.getElementById('lb-content');
-        const killFeed = document.getElementById('kill-feed');
-        const megaContainer = document.getElementById('mega-announcement-container');
-        const megaAlert = document.getElementById('mega-announcement');
-        const speedTimerUi = document.getElementById('speed-timer-ui');
-        const speedSecondsSpan = document.getElementById('speed-seconds');
-        let width, height, gameRunning = false;
-        let serverPlayers = {}, serverCubes = [], serverItems = [];
-        let myAngle = 0, isMouseDown = false;
-        let myConfirmedName = "Player";
-        
-        let starDustParticles = []; 
-        let fireworkExplosions = [];
-        let floatingTexts = [];
-        let rainbowHue = 0; 
-        let countdownTimerInterval = null; 
-        let speedCountdownInterval = null;
-        let currentSpeedTimeLeft = 0;
-        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-        
-        function playSound(type, freqValue = 200) {
-            try {
-                if (audioCtx.state === 'suspended') audioCtx.resume();
-                const osc = audioCtx.createOscillator();
-                const gainNode = audioCtx.createGain();
-                osc.connect(gainNode); gainNode.connect(audioCtx.destination);
-                if (type === 'merge') {
-                    osc.type = 'triangle';
-                    osc.frequency.setValueAtTime(freqValue, audioCtx.currentTime);
-                    osc.frequency.exponentialRampToValueAtTime(freqValue * 1.5, audioCtx.currentTime + 0.15);
-                    gainNode.gain.setValueAtTime(0.15, audioCtx.currentTime);
-                    gainNode.gain.linearRampToValueAtTime(0.01, audioCtx.currentTime + 0.15);
-                    osc.start(); osc.stop(audioCtx.currentTime + 0.15);
-                } 
-                else if (type === 'item') {
-                    osc.type = 'sine';
-                    osc.frequency.setValueAtTime(320, audioCtx.currentTime);
-                    osc.frequency.linearRampToValueAtTime(650, audioCtx.currentTime + 0.2);
-                    gainNode.gain.setValueAtTime(0.2, audioCtx.currentTime);
-                    gainNode.gain.linearRampToValueAtTime(0.01, audioCtx.currentTime + 0.2);
-                    osc.start(); osc.stop(audioCtx.currentTime + 0.2);
-                } 
-                else if (type === 'bomb') {
-                    osc.type = 'sawtooth';
-                    osc.frequency.setValueAtTime(110, audioCtx.currentTime);
-                    osc.frequency.linearRampToValueAtTime(30, audioCtx.currentTime + 0.4);
-                    gainNode.gain.setValueAtTime(0.35, audioCtx.currentTime);
-                    gainNode.gain.linearRampToValueAtTime(0.01, audioCtx.currentTime + 0.4);
-                    osc.start(); osc.stop(audioCtx.currentTime + 0.4);
-                }
-                else if (type === 'kill') {
-                    osc.type = 'square';
-                    osc.frequency.setValueAtTime(400, audioCtx.currentTime);
-                    osc.frequency.setValueAtTime(700, audioCtx.currentTime + 0.12);
-                    gainNode.gain.setValueAtTime(0.25, audioCtx.currentTime);
-                    gainNode.gain.linearRampToValueAtTime(0.01, audioCtx.currentTime + 0.25);
-                    osc.start(); osc.stop(audioCtx.currentTime + 0.25);
-                }
-            } catch(e) {}
-        }
-
-        const colors = { 
-            2: '#ef4444', 4: '#22c55e', 8: '#3b82f6', 16: '#06b6d4', 32: '#14b8a6', 
-            64: '#f59e0b', 128: '#f97316', 256: '#eab308', 512: '#a855f7', 1024: '#db2777', 2048: '#ec4899'
-        };
-
-        function resize() {
-            width = window.innerWidth; height = window.innerHeight;
-            canvas.width = width; canvas.height = height;
-        }
-        window.addEventListener('resize', resize);
-        resize();
-
-        function formatNumber(num) {
-            if (num < 1024) return num;
-            const suffixes = ["", "K", "M", "B", "T", "W", "KW", "MW", "BW", "TW"];
-            let i = 0;
-            let val = num;
-            while (val >= 1024 && i < suffixes.length - 1) {
-                val /= 1024;
-                i++;
-            }
-            return (val % 1 === 0 ? val : val.toFixed(1)) + suffixes[i];
-        }
-
-        function initStarDust() {
-            starDustParticles = [];
-            for (let i = 0; i < 150; i++) {
-                starDustParticles.push({
-                    x: Math.random() * 3600,
-                    y: Math.random() * 3600,
-                    size: Math.random() * 1.8 + 0.5,
-                    alpha: Math.random() * 0.6 + 0.2,
-                    speed: Math.random() * 0.3 + 0.1
-                });
-            }
-        }
-        initStarDust();
-
-        function createFireworkCluster(targetX, targetY) {
-            const numTia = 60;
-            const basicColors = ['#ff0055', '#00ffcc', '#ffcc00', '#ff00ff', '#00ff00', '#00ffff', '#ffffff'];
-            const clusterColor = basicColors[Math.floor(Math.random() * basicColors.length)];
-            for(let i=0; i < numTia; i++) {
-                let goc = (Math.PI * 2 / numTia) * i + (Math.random() - 0.5) * 0.2;
-                let tocDo = Math.random() * 5 + 3;
-                fireworkExplosions.push({
-                    x: targetX,
-                    y: targetY,
-                    vx: Math.cos(goc) * tocDo,
-                    vy: Math.sin(goc) * tocDo,
-                    size: Math.random() * 2.5 + 1.5,
-                    color: clusterColor,
-                    life: 1.0,
-                    decay: Math.random() * 0.015 + 0.01,
-                    hasSpark: Math.random() < 0.4 
-                });
-            }
-        }
-
-        function toggleMobileLeaderboard() {
-            const lb = document.getElementById('leaderboard');
-            const btn = document.getElementById('toggle-lb-btn');
-            if (lb.classList.contains('open')) {
-                lb.classList.remove('open');
-                btn.innerText = "🏆 TOP";
-                btn.style.background = "#fbbf24";
-            } else {
-                lb.classList.add('open');
-                btn.innerText = "❌ ĐÓNG";
-                btn.style.background = "#ef4444";
-                btn.style.color = "white";
-            }
-        }
-
-        socket.on('initPlayerName', (res) => {
-            myConfirmedName = res.confirmedName;
-            document.getElementById('p-name').innerText = myConfirmedName + ":";
-        });
-
-        socket.on('gameTick', (data) => {
-            if (!gameRunning) return;
-            serverPlayers = data.players;
-            serverCubes = data.cubes;
-            serverItems = data.items || [];
-            updateLeaderboard();
-
-            let me = serverPlayers[socket.id];
-            if (me && !me.alive) {
-                speedTimerUi.style.display = 'none';
-                if (speedCountdownInterval) clearInterval(speedCountdownInterval);
-                currentSpeedTimeLeft = 0;
-            }
-        });
-
-        socket.on('playClientSound', (res) => {
-            if (!gameRunning) return;
-            if (res.playerId === socket.id) {
-                if (res.type === 'merge') {
-                    let baseFreq = 150 + (Math.log2(res.val || 2) * 35);
-                    playSound('merge', baseFreq);
-                } else if (res.type === 'bomb') {
-                    playSound('bomb');
-                } else if (res.type === 'speed') {
-                    playSound('item');
-                    currentSpeedTimeLeft = res.speedDuration; 
-                    speedSecondsSpan.innerText = currentSpeedTimeLeft;
-                    speedTimerUi.style.display = 'block';
-
-                    if (speedCountdownInterval) clearInterval(speedCountdownInterval);
-                    speedCountdownInterval = setInterval(() => {
-                        currentSpeedTimeLeft--;
-                        if (currentSpeedTimeLeft <= 0) {
-                            clearInterval(speedCountdownInterval);
-                            speedTimerUi.style.display = 'none';
-                        } else {
-                            speedSecondsSpan.innerText = currentSpeedTimeLeft;
-                        }
-                    }, 1000);
-                } else {
-                    playSound('item');
-                }
-
-                if (res.floatingText) {
-                    floatingTexts.push({ text: res.floatingText, color: res.color || '#fff', x: width / 2, y: height / 2 - 40, alpha: 1.0 });
-                }
-            }
-        });
-
-        socket.on('triggerGlobalMegaFireworks', (res) => {
-            if (!gameRunning) return;
-            
-            megaAlert.innerHTML = `🎉 CHÚC MỪNG CHIẾN THẦN [ ${res.killerName} ] ĐÃ ĐẠT ${res.killStreak} KILL LIÊN TIẾP - THỐNG TRỊ TOÀN BỘ ĐẤU TRƯỜNG MULTIPLAYER! 🎉`;
-            megaContainer.style.display = 'block';
-
-            let duration = 10000; 
-            let startTime = Date.now();
-
-            let fireworkTimer = setInterval(() => {
-                if (Date.now() - startTime > duration) {
-                    clearInterval(fireworkTimer);
-                    megaContainer.style.display = 'none'; 
-                    megaAlert.innerHTML = "";
-                } else {
-                    let randomMapX = Math.random() * 3400 + 100;
-                    let randomMapY = Math.random() * 3400 + 100;
-                    createFireworkCluster(randomMapX, randomMapY);
-                }
-            }, 200);
-        });
-
-        socket.on('playerKilled', (res) => {
-            if (!gameRunning) return;
-            if (res.killerId === socket.id) {
-                playSound('kill');
-            }
-
-            killFeed.innerHTML = `⚔️ <span style="color:#fbbf24">${res.killerName}</span> đã NUỐT CHỬNG/HẠ GỤC <span style="color:#94a3b8">${res.victimName}</span>! (Chuỗi: ${res.killStreak})`;
-            setTimeout(() => { killFeed.innerHTML = ""; }, 4000);
-
-            let killerPlayer = serverPlayers[res.killerId];
-            let bombX = Math.random() * 600 + 1100;
-            let bombY = Math.random() * 600 + 1100;
-            if(killerPlayer && killerPlayer.body && killerPlayer.body[0]) {
-                bombX = killerPlayer.body[0].x;
-                bombY = killerPlayer.body[0].y;
-            }
-
-            if (res.fireworks) {
-                createFireworkCluster(bombX, bombY);
-            }
-        });
-
-        socket.on('respawnCountdown', (res) => {
-            megaContainer.style.display = 'none';
-            
-            let canvasCenterContainer = document.createElement('div');
-            canvasCenterContainer.id = "respawn-box";
-            canvasCenterContainer.style.position = "absolute";
-            canvasCenterContainer.style.top = "40%";
-            canvasCenterContainer.style.left = "50%";
-            canvasCenterContainer.style.transform = "translate(-50%, -50%)";
-            canvasCenterContainer.style.textAlign = "center";
-            canvasCenterContainer.style.zIndex = "95";
-            document.body.appendChild(canvasCenterContainer);
-
-            let timeLeft = res.delay;
-            if(countdownTimerInterval) clearInterval(countdownTimerInterval);
-            
-            countdownTimerInterval = setInterval(() => {
-                canvasCenterContainer.innerHTML = `<span style="color:#ef4444; font-size:24px; font-weight:bold; text-shadow:0 0 8px black;">Bạn đã bị hạ gục!</span><br><span style="font-size:16px; color:#fff; text-shadow:0 0 8px black;">Tự động hồi sinh sau: <b style="color:#fbbf24; font-size:22px;">${timeLeft}s</b></span><br><span style="font-size:11px; color:#9ca3af; text-shadow:0 0 8px black;">(Thời gian hình phạt lũy tiến)</span>`;
-                timeLeft--;
-                if(timeLeft < 0) {
-                    clearInterval(countdownTimerInterval);
-                    if(document.getElementById("respawn-box")) document.getElementById("respawn-box").remove();
-                }
-            }, 1000);
-        });
-
-        socket.on('respawnSuccess', () => {
-            if(countdownTimerInterval) clearInterval(countdownTimerInterval);
-            if(document.getElementById("respawn-box")) document.getElementById("respawn-box").remove();
-        });
-
-        function updateLeaderboard() {
-            let sorted = Object.values(serverPlayers).filter(p => p.alive).sort((a,b) => (b.body[0]?b.body[0].value:0) - (a.body[0]?a.body[0].value:0));
-            lbContent.innerHTML = sorted.slice(0, 10).map((p, i) => {
-                let isMe = p.id === socket.id;
-                let styleClass = isMe ? 'lb-item lb-you' : 'lb-item';
-                let rankLabel = (i === 0) ? `🥇 ` : (i === 1) ? `🥈 ` : (i === 2) ? `🥉 ` : `${i+1}. `;
-                return `<div class="${styleClass}">
-                    <span class="${i===0?'lb-top1':''}">${rankLabel}${p.name}</span>
-                    <span>${formatNumber(p.body[0]?p.body[0].value:2)}</span>
-                </div>`;
-            }).join('');
-        }
-
-        function getPlayerRankId(rankIndex) {
-            let activePlayers = Object.values(serverPlayers).filter(p => p.alive);
-            if (activePlayers.length <= rankIndex) return null;
-            activePlayers.sort((a, b) => (b.body[0]?b.body[0].value:0) - (a.body[0]?a.body[0].value:0));
-            return activePlayers[rankIndex].id;
-        }
-
-        function drawCube(node, isHead, name, isMe, baseScale = 1.0, rankStatus = 0) {
-            let baseSize = 42;
-            let finalSize = baseSize * baseScale;
-            
-            ctx.save(); 
-            ctx.translate(node.x, node.y);
-
-            if (isHead && rankStatus === 1) {
-                ctx.shadowBlur = 25;
-                ctx.shadowColor = `hsl(${rainbowHue}, 100%, 60%)`;
-            } else if (isHead && (rankStatus === 2 || rankStatus === 3)) {
-                ctx.shadowBlur = 20;
-                ctx.shadowColor = rankStatus === 2 ? `hsl(${(rainbowHue + 60) % 360}, 90%, 65%)` : `hsl(${(rainbowHue + 180) % 360}, 85%, 60%)`;
-            } else {
-                ctx.shadowBlur = isMe ? 18 : 5; 
-                ctx.shadowColor = isMe ? "#fbbf24" : "rgba(0,0,0,0.4)";
-            }
-
-            ctx.beginPath();
-            if (typeof ctx.roundRect === 'function') {
-                ctx.roundRect(-finalSize / 2, -finalSize / 2, finalSize, finalSize, Math.max(2, 6 + (baseScale * 2)));
-            } else {
-                ctx.rect(-finalSize / 2, -finalSize / 2, finalSize, finalSize);
-            }
-            
-            if (isHead && rankStatus === 1) {
-                let grad = ctx.createLinearGradient(-finalSize/2, -finalSize/2, finalSize/2, finalSize/2);
-                grad.addColorStop(0, `hsl(${rainbowHue}, 90%, 50%)`);
-                grad.addColorStop(1, `hsl(${(rainbowHue + 120) % 360}, 90%, 40%)`);
-                ctx.fillStyle = grad;
-            } else if (isHead && rankStatus === 2) {
-                let grad = ctx.createLinearGradient(-finalSize/2, finalSize/2, finalSize/2, -finalSize/2);
-                grad.addColorStop(0, `hsl(${(rainbowHue + 45) % 360}, 95%, 55%)`);
-                grad.addColorStop(1, `hsl(${(rainbowHue + 165) % 360}, 90%, 45%)`);
-                ctx.fillStyle = grad;
-            } else if (isHead && rankStatus === 3) {
-                let grad = ctx.createLinearGradient(0, -finalSize/2, 0, finalSize/2);
-                grad.addColorStop(0, `hsl(${(rainbowHue + 135) % 360}, 85%, 50%)`);
-                grad.addColorStop(1, `hsl(${(rainbowHue + 285) % 360}, 80%, 40%)`);
-                ctx.fillStyle = grad;
-            } else {
-                ctx.fillStyle = colors[node.value] || '#333';
-            }
-            ctx.fill();
-
-            if (isHead && rankStatus === 1) {
-                ctx.strokeStyle = `hsl(${(rainbowHue + 180) % 360}, 100%, 70%)`;
-                ctx.lineWidth = 3.0;
-            } else if (isHead && (rankStatus === 2 || rankStatus === 3)) {
-                ctx.strokeStyle = '#ffffff';
-                ctx.lineWidth = 2.2;
-            } else {
-                ctx.strokeStyle = 'rgba(255,255,255,0.25)';
-                ctx.lineWidth = 1.5;
-            }
-            ctx.stroke();
-
-            ctx.fillStyle = 'white';
-            ctx.font = `bold ${13 + (baseScale * 1.5)}px Arial`;
-            ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-            ctx.fillText(formatNumber(node.value), 0, 0);
-
-            if(isHead) { 
-                if (rankStatus === 1) ctx.fillStyle = `hsl(${rainbowHue}, 100%, 75%)`;
-                else if (rankStatus === 2) ctx.fillStyle = '#67e8f9';
-                else if (rankStatus === 3) ctx.fillStyle = '#fdba74';
-                else ctx.fillStyle = isMe ? '#fde047' : '#e2e8f0';
-                
-                ctx.font = 'bold 12px Arial';
-                let nameY = -finalSize / 2 - 4;
-                ctx.fillText(name, 0, nameY); 
-
-                if (rankStatus === 1) {
-                    let crownY = nameY - 10;
-                    ctx.save();
-                    ctx.translate(0, crownY); 
-                    ctx.fillStyle = '#facc15';
-                    ctx.strokeStyle = '#fff';
-                    ctx.lineWidth = 1;
-                    ctx.beginPath();
-                    ctx.moveTo(-10, 3);
-                    ctx.lineTo(-14, -5);
-                    ctx.lineTo(-6, -1);
-                    ctx.moveTo(-6, -1); ctx.lineTo(0, -9); ctx.lineTo(6, -1);
-                    ctx.lineTo(14, -5);
-                    ctx.lineTo(10, 3);
-                    ctx.closePath();
-                    ctx.fill(); ctx.stroke();
-                    ctx.restore();
-
-                    ctx.fillStyle = '#fde047';
-                    ctx.font = 'bold 10px Arial';
-                    ctx.fillText('🏆 TOP 1', 0, crownY - 14);
-                } 
-                else if (rankStatus === 2) {
-                    ctx.fillStyle = '#e2e8f0';
-                    ctx.font = 'bold 10px Arial';
-                    ctx.fillText('🥈 TOP 2', 0, nameY - 11);
-                } 
-                else if (rankStatus === 3) {
-                    ctx.fillStyle = '#f59e0b';
-                    ctx.font = 'bold 10px Arial';
-                    ctx.fillText('🥉 TOP 3', 0, nameY - 11);
-                }
-            }
-            ctx.restore();
-        }
-
-        function drawItemBox(it) {
-            ctx.save();
-            ctx.translate(it.x, it.y);
-            let itemColors = { 'x2': '#fbbf24', '/2': '#94a3b8', 'bomb': '#ef4444', 'speed': '#00ffff' };
-            ctx.shadowBlur = 12;
-            ctx.shadowColor = itemColors[it.type] || '#fff';
-            ctx.beginPath(); ctx.arc(0, 0, 18, 0, Math.PI * 2);
-            ctx.fillStyle = '#1e293b'; ctx.fill();
-            ctx.strokeStyle = itemColors[it.type] || '#fff'; ctx.lineWidth = 2.5; ctx.stroke();
-            ctx.fillStyle = itemColors[it.type] || '#fff'; ctx.font = 'bold 12px Arial';
-            ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-            ctx.fillText(it.type.toUpperCase(), 0, 0);
-            ctx.restore();
-        }
-
-        function animate() {
-            if(!gameRunning) return;
-            ctx.fillStyle = '#030712'; ctx.fillRect(0, 0, width, height);
-            rainbowHue = (rainbowHue + 2) % 360;
-
-            const myData = serverPlayers[socket.id];
-            
-            ctx.save();
-            if (myData && myData.alive && myData.body && myData.body[0]) {
-                ctx.translate(width / 2 - myData.body[0].x, height / 2 - myData.body[0].y);
-            }
-
-            ctx.save();
-            ctx.fillStyle = '#fbbf24';
-            starDustParticles.forEach(p => {
-                ctx.globalAlpha = p.alpha;
-                ctx.beginPath();
-                ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
-                ctx.fill();
-                p.y -= p.speed;
-                p.x -= p.speed * 0.3;
-                if(p.y < 0) p.y = 3600;
-                if(p.x < 0) p.x = 3600;
-            });
-            ctx.restore();
-
-            serverCubes.forEach(c => drawCube({x: c.x, y: c.y, value: c.value}, false, "", false, 0.65, 0));
-            serverItems.forEach(it => drawItemBox(it));
-
-            let top1Id = getPlayerRankId(0);
-            let top2Id = getPlayerRankId(1);
-            let top3Id = getPlayerRankId(2);
-
-            Object.values(serverPlayers).forEach(p => { 
-                if(p.alive && p.body) {
-                    let isMe = p.id === socket.id;
-                    let rankStatus = (p.id === top1Id) ? 1 : (p.id === top2Id) ? 2 : (p.id === top3Id) ? 3 : 0;
-
-                    for(let i = p.body.length - 1; i >= 0; i--) {
-                        let node = p.body[i];
-                        if (node) drawCube(node, i === 0, p.name, isMe, node.baseScale || 1.0, rankStatus); 
-                    }
-                
-                    if(isMe && p.body.length > 0) {
-                        document.getElementById('chain-text').innerText = p.body.map(b => formatNumber(b.value)).join(' - ');
-                    }
-                }
-            });
-
-            for (let i = fireworkExplosions.length - 1; i >= 0; i--) {
-                let f = fireworkExplosions[i];
-                ctx.save();
-                ctx.globalAlpha = f.life;
-                ctx.fillStyle = f.color;
-                
-                if (f.hasSpark) {
-                    ctx.strokeStyle = f.color;
-                    ctx.lineWidth = f.size;
-                    ctx.beginPath();
-                    ctx.moveTo(f.x, f.y);
-                    ctx.lineTo(f.x - f.vx * 2, f.y - f.vy * 2);
-                    ctx.stroke();
-                } else {
-                    ctx.beginPath();
-                    ctx.arc(f.x, f.y, f.size, 0, Math.PI * 2);
-                    ctx.fill();
-                }
-                ctx.restore();
-                f.x += f.vx;
-                f.y += f.vy;
-                f.vy += 0.04; 
-                f.life -= f.decay; 
-                if (f.life <= 0) fireworkExplosions.splice(i, 1);
-            }
-
-            ctx.restore();
-
-            for (let i = floatingTexts.length - 1; i >= 0; i--) {
-                let ft = floatingTexts[i];
-                ctx.save(); ctx.globalAlpha = ft.alpha; ctx.fillStyle = ft.color; ctx.font = 'bold 20px Arial'; ctx.textAlign = 'center';
-                ctx.fillText(ft.text, ft.x, ft.y); ctx.restore();
-                ft.y -= 1.2; ft.alpha -= 0.02;
-                if (ft.alpha <= 0) floatingTexts.splice(i, 1);
-            }
-
-            socket.emit('updateInput', { angle: myAngle, isMouseDown: isMouseDown });
-            requestAnimationFrame(animate);
-        }
-
-        function activateFullscreen() {
-            let docEl = document.documentElement;
-            if (docEl.requestFullscreen) { docEl.requestFullscreen(); }
-            else if (docEl.mozRequestFullScreen) { docEl.mozRequestFullScreen(); }
-            else if (docEl.webkitRequestFullscreen) { docEl.webkitRequestFullscreen(); }
-            else if (docEl.msRequestFullscreen) { docEl.msRequestFullscreen(); }
-        }
+        const nameInput = document.getElementById('name-input');
+        const lbList = document.getElementById('lb-list');
 
         startBtn.onclick = () => {
-            const name = nameInput.value.trim() || "Player";
-            try { activateFullscreen(); } catch(e) {}
-
+            let name = nameInput.value.trim();
             startScreen.style.display = 'none';
             document.getElementById('ui').style.display = 'block';
-            
-            if (window.innerWidth <= 768) {
-                document.getElementById('toggle-lb-btn').style.display = 'block';
-            } else {
-                document.getElementById('leaderboard').style.display = 'block';
-            }
-            
-            if (audioCtx.state === 'suspended') audioCtx.resume();
+            document.getElementById('leaderboard').style.display = 'block';
 
             gameRunning = true;
             socket.emit('joinGame', { name: name });
-            setTimeout(() => { resize(); window.scrollTo(0, 1); }, 400);
             animate();
         };
 
+        socket.on('gameTick', (data) => {
+            players = data.players;
+            cubes = data.cubes;
+            items = data.items;
+        });
+
+        function drawGrid(camX, camY) {
+            ctx.strokeStyle = '#1e293b';
+            ctx.lineWidth = 1;
+            const size = 60;
+            const startX = Math.floor((camX - width / 2) / size) * size;
+            const startY = Math.floor((camY - height / 2) / size) * size;
+            const endX = Math.ceil((camX + width / 2) / size) * size;
+            const endY = Math.ceil((camY + height / 2) / size) * size;
+
+            for (let x = startX; x <= endX; x += size) {
+                ctx.beginPath();
+                ctx.moveTo(x - camX + width / 2, startY - camY + height / 2);
+                ctx.lineTo(x - camX + width / 2, endY - camY + height / 2);
+                ctx.stroke();
+            }
+            for (let y = startY; y <= endY; y += size) {
+                ctx.beginPath();
+                ctx.moveTo(startX - camX + width / 2, y - camY + height / 2);
+                ctx.lineTo(endX - camX + width / 2, y - camY + height / 2);
+                ctx.stroke();
+            }
+        }
+
+        function animate() {
+            if (!gameRunning) return;
+            requestAnimationFrame(animate);
+
+            socket.emit('move', myAngle);
+
+            let me = players[socket.id];
+            let camX = 1800, camY = 1800;
+            if (me && me.body && me.body[0]) {
+                camX = me.body[0].x;
+                camY = me.body[0].y;
+            }
+
+            ctx.fillStyle = '#030712';
+            ctx.fillRect(0, 0, width, height);
+
+            drawGrid(camX, camY);
+
+            // Vẽ Cubes
+            cubes.forEach(c => {
+                let screenX = c.x - camX + width / 2;
+                let screenY = c.y - camY + height / 2;
+                if (screenX > -30 && screenX < width + 30 && screenY > -30 && screenY < height + 30) {
+                    ctx.fillStyle = '#f59e0b';
+                    ctx.fillRect(screenX - 12, screenY - 12, 24, 24);
+                    ctx.fillStyle = 'black';
+                    ctx.font = 'bold 11px sans-serif';
+                    ctx.textAlign = 'center';
+                    ctx.textBaseline = 'middle';
+                    ctx.fillText(c.value, screenX, screenY);
+                }
+            });
+
+            // Vẽ Đạo cụ (Items)
+            items.forEach(it => {
+                let screenX = it.x - camX + width / 2;
+                let screenY = it.y - camY + height / 2;
+                ctx.beginPath();
+                ctx.arc(screenX, screenY, 15, 0, Math.PI * 2);
+                ctx.fillStyle = it.type === 'magnet' ? '#3b82f6' : it.type === 'shield' ? '#10b981' : '#a855f7';
+                ctx.fill();
+            });
+
+            // Vẽ Người chơi & Bot
+            for (let id in players) {
+                let p = players[id];
+                if (!p.body || p.body.length === 0) continue;
+
+                for (let i = p.body.length - 1; i >= 0; i--) {
+                    let node = p.body[i];
+                    let screenX = node.x - camX + width / 2;
+                    let screenY = node.y - camY + height / 2;
+                    let radius = i === 0 ? (42 + Math.sqrt(p.score) * 1.5) : 22;
+
+                    ctx.fillStyle = p.color;
+                    ctx.fillRect(screenX - radius, screenY - radius, radius * 2, radius * 2);
+
+                    ctx.fillStyle = 'white';
+                    ctx.font = i === 0 ? 'bold 15px sans-serif' : '12px sans-serif';
+                    ctx.textAlign = 'center';
+                    ctx.textBaseline = 'middle';
+                    ctx.fillText(node.value, screenX, screenY);
+                }
+
+                // Vẽ tên phía trên đầu
+                let head = p.body[0];
+                ctx.fillStyle = 'rgba(255,255,255,0.8)';
+                ctx.font = '13px sans-serif';
+                ctx.fillText(p.name, head.x - camX + width / 2, head.y - camY + height / 2 - 55);
+            }
+
+            // Xử lý Bảng xếp hạng
+            let sorted = Object.values(players).sort((a, b) => b.score - a.score).slice(0, 7);
+            let lbHTML = '';
+            sorted.forEach((p, idx) => {
+                let isMe = p.id === socket.id ? ' me' : '';
+                lbHTML += `<div class="lb-item${isMe}"><span>${idx + 1}. ${p.name}</span><span>${p.score}</span></div>`;
+            });
+            lbList.innerHTML = lbHTML;
+
+            // VẼ GIAO DIỆN COOLDOWN TĂNG TỐC CHO NGƯỜI CHƠI NHÌN THẤY
+            let timeLeft = Math.ceil((20000 - (Date.now() - lastClientDashTime)) / 1000);
+            ctx.textAlign = 'left';
+            if (timeLeft > 0 && timeLeft <= 20) {
+                ctx.fillStyle = "rgba(254, 240, 138, 1)"; // Màu vàng nhạt
+                ctx.font = "bold 20px sans-serif";
+                ctx.fillText("Tăng tốc hồi chiêu: " + timeLeft + "s", 25, height - 35);
+            } else {
+                ctx.fillStyle = "rgba(74, 222, 128, 1)"; // Màu xanh lá sáng
+                ctx.font = "bold 20px sans-serif";
+                ctx.fillText("Tăng tốc: SẴN SÀNG (Nhấp giữ chuột)", 25, height - 35);
+            }
+        }
+
         const moveInput = (e) => {
-            if(!gameRunning) return;
+            if (!gameRunning) return;
             const x = e.touches ? e.touches[0].clientX : e.clientX;
             const y = e.touches ? e.touches[0].clientY : e.clientY;
-            myAngle = Math.atan2(y - height/2, x - width/2);
+            myAngle = Math.atan2(y - height / 2, x - width / 2);
         };
+
         window.addEventListener('mousemove', moveInput);
-        window.addEventListener('touchmove', (e) => { if(gameRunning) e.preventDefault(); moveInput(e); }, {passive:false});
-        window.addEventListener('mousedown', () => { isMouseDown = true; });
-        window.addEventListener('mouseup', () => { isMouseDown = false; });
-        window.addEventListener('touchstart', () => { isMouseDown = true; });
-        window.addEventListener('touchend', () => { isMouseDown = false; });
+        window.addEventListener('touchmove', (e) => { if (gameRunning) e.preventDefault(); moveInput(e); }, { passive: false });
+
+        // SỰ KIỆN CLICK CHUỘT / CHẠM MÀN HÌNH ĐÃ ĐỒNG BỘ COOLDOWN 20S VÀ THỜI GIAN LƯỚT TỐI ĐA 2S
+        window.addEventListener('mousedown', () => { 
+            let now = Date.now();
+            if (now - lastClientDashTime >= 20000) {
+                isMouseDown = true; 
+                lastClientDashTime = now;
+                socket.emit('setMouseDown', true);
+
+                // Tự động tắt trạng thái tăng tốc sau 2 giây
+                setTimeout(() => {
+                    isMouseDown = false;
+                    socket.emit('setMouseDown', false);
+                }, 2000);
+            }
+        });
+
+        window.addEventListener('mouseup', () => { 
+            isMouseDown = false; 
+            socket.emit('setMouseDown', false);
+        });
+
+        window.addEventListener('touchstart', () => { 
+            let now = Date.now();
+            if (now - lastClientDashTime >= 20000) {
+                isMouseDown = true; 
+                lastClientDashTime = now;
+                socket.emit('setMouseDown', true);
+
+                setTimeout(() => {
+                    isMouseDown = false;
+                    socket.emit('setMouseDown', false);
+                }, 2000);
+            }
+        });
+
+        window.addEventListener('touchend', () => { 
+            isMouseDown = false; 
+            socket.emit('setMouseDown', false);
+        });
+
     </script>
 </body>
 </html>
