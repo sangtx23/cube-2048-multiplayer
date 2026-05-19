@@ -8,7 +8,7 @@
         html, body { margin: 0; padding: 0; overflow: hidden; background-color: #030712; font-family: sans-serif; touch-action: none; user-select: none; width: 100%; height: 100%; }
         canvas { display: block; width: 100%; height: 100%; }
         
-        /* Yêu cầu 4: Màn hình Custom Load Game thay thế hoàn toàn cho Render mặc định */
+        /* Yêu cầu 4: Màn hình Custom Load Game thay thế cho màn hình render mặc định */
         #custom-loader {
             position: absolute; inset: 0; background: #0b0f19;
             display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 200;
@@ -23,17 +23,15 @@
         #start-screen {
             position: absolute; inset: 0; background: #030712;
             display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 100;
-            display: none; /* Sẽ hiện sau khi bộ tải đóng */
+            display: none; /* Sẽ được hiển thị sau khi loader ẩn */
         }
         #name-input { padding: 12px; font-size: 18px; border-radius: 25px; border: 2px solid #fbbf24; width: 220px; text-align: center; margin-bottom: 15px; outline: none; background: #1f2937; color: white; }
         #start-btn { padding: 12px 50px; font-size: 18px; background: #fbbf24; color: #000; border: none; border-radius: 25px; cursor: pointer; font-weight: bold; box-shadow: 0 0 15px #fbbf24; }
         
-        /* GIAO DIỆN UI THÔNG MINH */
         #ui { position: absolute; top: 12px; left: 12px; color: white; pointer-events: none; z-index: 10; display: none; font-size: 14px; text-shadow: 1px 1px 2px black; max-width: 45%; }
         #ui br { display: none; } 
         #ui #chain-text { margin-left: 5px; color: #fbbf24; font-weight: bold; }
 
-        /* BẢNG XẾP HẠNG */
         #leaderboard { position: absolute; top: 12px; right: 12px; background: rgba(3, 7, 18, 0.9); padding: 10px; border-radius: 10px; color: white; min-width: 200px; z-index: 95; display: none; border: 1px solid #fbbf24; box-shadow: 0 0 12px rgba(251, 191, 36, 0.25); transition: all 0.3s ease; }
         .lb-title { margin: 0 0 6px 0; text-align: center; color: #fbbf24; font-size: 14px; border-bottom: 1px dashed rgba(251, 191, 36, 0.4); padding-bottom: 4px; font-weight: bold; cursor: pointer; }
         .lb-item { display: flex; justify-content: space-between; font-size: 12px; margin: 4px 0; padding: 2px 4px; border-radius: 4px; }
@@ -49,7 +47,7 @@
         
         @keyframes marqueeText { 0% { transform: translate3d(100%, 0, 0); } 100% { transform: translate3d(-100%, 0, 0); } }
 
-        /* Yêu cầu 3: Giao diện Nút Bấm Tăng Tốc Góc Dưới Bên Trái */
+        /* Yêu cầu 3: Giao diện Nút Bấm Tăng Tốc Góc Dưới Bên Trái Màn Hình */
         #skill-speed-btn {
             position: absolute; bottom: 30px; left: 30px; width: 75px; height: 75px;
             background: radial-gradient(circle, #fbbf24 0%, #d97706 100%);
@@ -66,7 +64,7 @@
             position: absolute; bottom: 0; left: 0; right: 0; top: 0; background: rgba(0, 0, 0, 0.42); border-radius: 50%; height: 0%; transition: height 0.1s linear;
         }
 
-        /* Yêu cầu 6: Ép buộc chơi màn hình ngang trên điện thoại di động */
+        /* Yêu cầu 6: Ép buộc chơi màn hình ngang trên điện thoại */
         #landscape-lock {
             position: absolute; inset: 0; background: #030712; z-index: 9999;
             display: none; flex-direction: column; align-items: center; justify-content: center; color: white; text-align: center; padding: 20px;
@@ -147,7 +145,7 @@
         const speedTimerUi = document.getElementById('speed-timer-ui');
         const speedSecondsSpan = document.getElementById('speed-seconds');
         
-        // Quản lý kĩ năng bấm x3 (Yêu cầu 3)
+        // Cấu hình kĩ năng tăng tốc x3 (Yêu cầu 3)
         const speedBtn = document.getElementById('skill-speed-btn');
         const speedCdText = document.getElementById('skill-cd-text');
         const speedCdOverlay = document.getElementById('skill-cd-overlay');
@@ -170,7 +168,7 @@
         let countdownTimerInterval = null; 
         const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
 
-        // Giả lập kết thúc tải Game sau 1.5 giây để hiện màn hình chơi (Yêu cầu 4)
+        // Ẩn màn hình loader tùy biến sau 1.5 giây (Yêu cầu 4)
         window.addEventListener('DOMContentLoaded', () => {
             setTimeout(() => {
                 const loader = document.getElementById('custom-loader');
@@ -182,10 +180,9 @@
             }, 1500);
         });
 
-        // Xử lý kiểm tra bắt buộc màn hình ngang (Yêu cầu 6)
+        // Xử lý kiểm tra bắt buộc xoay ngang màn hình (Yêu cầu 6)
         function checkOrientation() {
             const lockView = document.getElementById('landscape-lock');
-            // Nếu là thiết bị di động dựa trên kích thước hoặc touch và chiều dọc
             if (window.innerHeight > window.innerWidth && window.innerWidth <= 768) {
                 lockView.style.display = 'flex';
             } else {
@@ -288,19 +285,17 @@
             }
         }
 
-        // Thực thi bấm nút Skill (Yêu cầu 3)
+        // Thực thi xử lý khi ấn nút tăng tốc x3 (Yêu cầu 3)
         function triggerSpeedSkill() {
             if (!gameRunning || isSkillInCooldown) return;
-            
-            // Gửi yêu cầu lên server duyệt
             socket.emit('activateSpeedSkill');
         }
 
-        // Server xác nhận kích hoạt thành công, chạy đồng bộ Client (Yêu cầu 3)
+        // Nhận xác nhận đồng bộ từ server và vẽ hiệu ứng đếm ngược hồi chiêu
         socket.on('speedSkillActivatedConfirmed', () => {
             isSkillInCooldown = true;
-            skillActiveDurationLeft = 7; // Kéo dài trong 7s
-            skillCooldownTimeLeft = 20;  // Hồi chiêu 20s tổng cộng
+            skillActiveDurationLeft = 7; // Hoạt động 7s
+            skillCooldownTimeLeft = 20;  // Thời gian chờ hồi chiêu 20s
 
             speedBtn.classList.add('cooldown');
             speedLabel.innerText = "RUNNING";
@@ -310,7 +305,7 @@
             speedSecondsSpan.innerText = skillActiveDurationLeft;
             speedTimerUi.style.display = 'block';
 
-            playSound('item'); // Kích âm thanh tốc độ đặc trưng vốn có
+            playSound('item'); 
 
             if (skillTimerInterval) clearInterval(skillTimerInterval);
             
@@ -326,11 +321,9 @@
                     }
                 }
                 
-                // Quản lý tiến trình Hồi chiêu tổng thể (20s)
                 if (skillCooldownTimeLeft > 0) {
                     skillCooldownTimeLeft--;
                     
-                    // Vẽ tỷ lệ bóng phủ mờ mượt mà
                     let percent = ((20 - skillCooldownTimeLeft) / 20) * 100;
                     speedCdOverlay.style.height = (100 - percent) + "%";
 
@@ -364,7 +357,6 @@
 
             let me = serverPlayers[socket.id];
             if (me && !me.alive) {
-                // Nếu bị tiêu diệt thì reset hiển thị kĩ năng chạy
                 speedTimerUi.style.display = 'none';
             }
         });
@@ -508,19 +500,16 @@
 
             ctx.save(); ctx.translate(width / 2 - camX, height / 2 - camY);
 
-            // BẢN ĐỒ ARENA BOUNDARY
             ctx.strokeStyle = 'rgba(251,191,36,0.35)'; ctx.lineWidth = 6; ctx.strokeRect(0, 0, 3600, 3600);
             ctx.strokeStyle = 'rgba(31,41,55,0.4)'; ctx.lineWidth = 1;
             for (let x = 200; x < 3600; x += 200) { ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, 3600); ctx.stroke(); }
             for (let y = 200; y < 3600; y += 200) { ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(3600, y); ctx.stroke(); }
 
-            // STAR DUST BACKGROUND
             starDustParticles.forEach(p => {
                 ctx.fillStyle = `rgba(255, 255, 255, ${p.alpha})`;
                 ctx.beginPath(); ctx.arc(p.x, p.y, p.size, 0, Math.PI*2); ctx.fill();
             });
 
-            // VẼ CÁC KHỐI ĐIỂM SỐ
             serverCubes.forEach(c => {
                 let size = 20 * calculateNodeScale(c.value);
                 ctx.fillStyle = colors[c.value] || '#555'; ctx.beginPath();
@@ -531,13 +520,10 @@
                 ctx.fillText(formatNumber(c.value), c.x, c.y);
             });
 
-            // VẼ VẬT PHẨM TỒN TẠI
             serverItems.forEach(it => { drawItem(it); });
 
-            // XÁC ĐỊNH HẠNG TOP KHỐI
             let top1Id = getPlayerRankId(0); let top2Id = getPlayerRankId(1); let top3Id = getPlayerRankId(2);
 
-            // VẼ ĐỐI THỦ VÀ BOT TRƯỚC
             Object.values(serverPlayers).forEach(p => {
                 if (!p.alive || p.id === socket.id || p.body.length === 0) return;
                 let rStatus = (p.id === top1Id) ? 1 : (p.id === top2Id) ? 2 : (p.id === top3Id) ? 3 : 0;
@@ -547,7 +533,6 @@
                 }
             });
 
-            // VẼ NGƯỜI CHƠI CHÍNH ĐÈ LÊN TRÊN CÙNG
             if (me && me.alive && me.body.length > 0) {
                 let myRStatus = (socket.id === top1Id) ? 1 : (socket.id === top2Id) ? 2 : (socket.id === top3Id) ? 3 : 0;
                 if (me.body[0]) {
@@ -560,7 +545,6 @@
                 }
             }
 
-            // PHÁO HOA HIỆU ỨNG RỰC RỠ
             for (let i = fireworkExplosions.length - 1; i >= 0; i--) {
                 let f = fireworkExplosions[i]; f.x += f.vx; f.y += f.vy; f.vy += 0.03; f.life -= f.decay;
                 if (f.life <= 0) { fireworkExplosions.splice(i, 1); continue; }
@@ -570,7 +554,6 @@
             }
             ctx.restore();
 
-            // CHỮ NỔI FLOATING TEXT TRÊN GIAO DIỆN MÀN HÌNH CHÍNH
             for (let i = floatingTexts.length - 1; i >= 0; i--) {
                 let ft = floatingTexts[i]; ft.y -= 0.8; ft.alpha -= 0.015;
                 if (ft.alpha <= 0) { floatingTexts.splice(i, 1); continue; }
@@ -583,7 +566,7 @@
             try { audioCtx.resume(); } catch(e) {}
             startScreen.style.display = 'none';
             document.getElementById('ui').style.display = 'block';
-            speedBtn.style.display = 'flex'; // Hiện nút kĩ năng khi vào đấu trường (Yêu cầu 3)
+            speedBtn.style.display = 'flex'; // Hiển thị nút skill x3 khi vào trận
             
             if (window.innerWidth <= 768) { document.getElementById('toggle-lb-btn').style.display = 'block'; }
             else { document.getElementById('leaderboard').style.display = 'block'; }
@@ -595,7 +578,6 @@
             animate();
         };
 
-        // Ghi nhận góc điều hướng chuột/touch di chuyển thông thường
         const moveInput = (e) => {
             if(!gameRunning) return;
             const x = e.touches ? e.touches[0].clientX : e.clientX;
@@ -607,7 +589,7 @@
         window.addEventListener('mousemove', moveInput);
         window.addEventListener('touchmove', (e) => { if(gameRunning) e.preventDefault(); moveInput(e); }, {passive:false});
         
-        // Yêu cầu 1: Triệt tiêu hoàn toàn mousedown/touchstart liên quan đến tăng tốc cũ
+        // Yêu cầu 1: Triệt tiêu mousedown/touchstart liên quan đến tăng tốc dốc đuôi cũ
         window.addEventListener('mousedown', () => {});
         window.addEventListener('mouseup', () => {});
         window.addEventListener('touchstart', () => {});
