@@ -34,7 +34,6 @@ function spawnCube() {
 }
 
 function spawnItem(type) {
-    // Yêu cầu 2: Loại bỏ vật phẩm tăng tốc (speed), chỉ lấy ngẫu nhiên 3 loại: x2, /2, bomb
     let t = type || ['x2', '/2', 'bomb'][Math.floor(Math.random() * 3)];
     serverItems.push({
         id: Math.random().toString(36).substring(2, 9),
@@ -133,7 +132,7 @@ function handlePlayerDeath(playerId) {
             if (reCheck && !reCheck.alive) {
                 reCheck.alive = true;
                 reCheck.killStreak = 0;
-                reCheck.skillSpeedActive = false; // Reset trạng thái kĩ năng khi hồi sinh
+                reCheck.skillSpeedActive = false; 
                 let rx = Math.random() * (MAP_WIDTH - 600) + 300;
                 let ry = Math.random() * (MAP_HEIGHT - 600) + 300;
                 reCheck.body = [{ x: rx, y: ry, value: 2, baseScale: 1.0 }];
@@ -184,7 +183,7 @@ io.on('connection', (socket) => {
             alive: true,
             angle: 0,
             isMouseDown: false,
-            skillSpeedActive: false, // Quản lý kĩ năng x3 mới
+            skillSpeedActive: false, 
             skillSpeedTimer: 0,
             killCount: 0,
             killStreak: 0,
@@ -196,18 +195,16 @@ io.on('connection', (socket) => {
     socket.on('updateInput', (data) => {
         let p = serverPlayers[socket.id];
         if (p && p.alive) {
-            p.angle = data.angle || 0;
-            // Yêu cầu 1: Loại bỏ nhấp chuột/touch tăng tốc cũ
+            p.angle = typeof data.angle === 'number' ? data.angle : 0;
             p.isMouseDown = false; 
         }
     });
 
-    // Yêu cầu 3: Lắng nghe tín hiệu kích hoạt nút bấm tăng tốc từ Client
     socket.on('activateSpeedSkill', () => {
         let p = serverPlayers[socket.id];
         if (p && p.alive && !p.skillSpeedActive) {
             p.skillSpeedActive = true;
-            p.skillSpeedTimer = 7 * 60; // Duy trì trong 7 giây (ở tần số vòng lặp 60 FPS)
+            p.skillSpeedTimer = 7 * 60; 
             io.to(socket.id).emit('speedSkillActivatedConfirmed');
         }
     });
@@ -218,11 +215,9 @@ io.on('connection', (socket) => {
     });
 });
 
-// VÒNG LẶP VẬT LÝ CHÍNH (60 FPS)
 setInterval(() => {
     let players = Object.values(serverPlayers);
 
-    // 1. CẬP NHẬT AI BOT
     players.forEach(p => {
         if (!p.alive || !p.isBot || p.body.length === 0) return;
         p.botTargetTimer--;
@@ -264,20 +259,16 @@ setInterval(() => {
         }
     });
 
-    // 2. XỬ LÝ DI CHUYỂN TOÀN BỘ NGƯỜI CHƠI VÀ BOT
     players.forEach(p => {
         if (!p.alive || p.body.length === 0) return;
 
         let speedFactor = 1.0;
-        
-        // Yêu cầu 3: Tính toán hệ số tốc độ khi bấm nút kĩ năng
         if (p.skillSpeedActive) {
-            speedFactor = 3.0; // Tăng x3 tốc độ
+            speedFactor = 3.0; 
             p.skillSpeedTimer--;
             if (p.skillSpeedTimer <= 0) {
                 p.skillSpeedActive = false;
             }
-            // Giải quyết: Giữ nguyên speedFactor, hoàn toàn KHÔNG BỊ ĐỨT ĐUÔI (không cắt mảng để rớt khối)
         }
 
         let baseStep = 2.86 * speedFactor;
@@ -305,7 +296,6 @@ setInterval(() => {
             }
         }
 
-        // 3. VA CHẠM ĂN KHỐI ĐIỂM
         for (let i = serverCubes.length - 1; i >= 0; i--) {
             let c = serverCubes[i];
             let cRadius = (28 * calculateNodeScale(c.value)) / 2;
@@ -322,7 +312,6 @@ setInterval(() => {
             }
         }
 
-        // 4. VA CHẠM ĂN VẬT PHẨM (ITEMS)
         for (let i = serverItems.length - 1; i >= 0; i--) {
             let it = serverItems[i];
             let dist = Math.hypot(head.x - it.x, head.y - it.y);
@@ -352,7 +341,6 @@ setInterval(() => {
         }
     });
 
-    // 5. XỬ LÝ VA CHẠM GIỮA CÁC ĐẦU VÀ THÂN RẮN
     let deadPlayersThisTick = new Set();
     for (let i = 0; i < players.length; i++) {
         let p1 = players[i];
