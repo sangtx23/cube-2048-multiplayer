@@ -8,7 +8,6 @@
         html, body { margin: 0; padding: 0; overflow: hidden; background-color: #030712; font-family: sans-serif; touch-action: none; user-select: none; width: 100%; height: 100%; }
         canvas { display: block; width: 100%; height: 100%; }
         
-        /* Yêu cầu 4: Màn hình Custom Load Game thay thế cho màn hình render mặc định */
         #custom-loader {
             position: absolute; inset: 0; background: #0b0f19;
             display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 200;
@@ -23,13 +22,12 @@
         #start-screen {
             position: absolute; inset: 0; background: #030712;
             display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 100;
-            display: none; /* Sẽ được hiển thị sau khi loader ẩn */
+            display: none; 
         }
         #name-input { padding: 12px; font-size: 18px; border-radius: 25px; border: 2px solid #fbbf24; width: 220px; text-align: center; margin-bottom: 15px; outline: none; background: #1f2937; color: white; }
         #start-btn { padding: 12px 50px; font-size: 18px; background: #fbbf24; color: #000; border: none; border-radius: 25px; cursor: pointer; font-weight: bold; box-shadow: 0 0 15px #fbbf24; }
         
         #ui { position: absolute; top: 12px; left: 12px; color: white; pointer-events: none; z-index: 10; display: none; font-size: 14px; text-shadow: 1px 1px 2px black; max-width: 45%; }
-        #ui br { display: none; } 
         #ui #chain-text { margin-left: 5px; color: #fbbf24; font-weight: bold; }
 
         #leaderboard { position: absolute; top: 12px; right: 12px; background: rgba(3, 7, 18, 0.9); padding: 10px; border-radius: 10px; color: white; min-width: 200px; z-index: 95; display: none; border: 1px solid #fbbf24; box-shadow: 0 0 12px rgba(251, 191, 36, 0.25); transition: all 0.3s ease; }
@@ -47,7 +45,6 @@
         
         @keyframes marqueeText { 0% { transform: translate3d(100%, 0, 0); } 100% { transform: translate3d(-100%, 0, 0); } }
 
-        /* Yêu cầu 3: Giao diện Nút Bấm Tăng Tốc Góc Dưới Bên Trái Màn Hình */
         #skill-speed-btn {
             position: absolute; bottom: 30px; left: 30px; width: 75px; height: 75px;
             background: radial-gradient(circle, #fbbf24 0%, #d97706 100%);
@@ -64,7 +61,6 @@
             position: absolute; bottom: 0; left: 0; right: 0; top: 0; background: rgba(0, 0, 0, 0.42); border-radius: 50%; height: 0%; transition: height 0.1s linear;
         }
 
-        /* Yêu cầu 6: Ép buộc chơi màn hình ngang trên điện thoại */
         #landscape-lock {
             position: absolute; inset: 0; background: #030712; z-index: 9999;
             display: none; flex-direction: column; align-items: center; justify-content: center; color: white; text-align: center; padding: 20px;
@@ -77,7 +73,6 @@
             #leaderboard.open { display: block !important; }
             #toggle-lb-btn { display: block; }
             #ui { font-size: 12px; top: 12px; }
-            #ui div:last-child { display: none !important; }
             #mega-announcement { font-size: 16px; }
             #skill-speed-btn { bottom: 20px; left: 20px; width: 68px; height: 68px; font-size: 12px; }
         }
@@ -145,7 +140,6 @@
         const speedTimerUi = document.getElementById('speed-timer-ui');
         const speedSecondsSpan = document.getElementById('speed-seconds');
         
-        // Cấu hình kĩ năng tăng tốc x3 (Yêu cầu 3)
         const speedBtn = document.getElementById('skill-speed-btn');
         const speedCdText = document.getElementById('skill-cd-text');
         const speedCdOverlay = document.getElementById('skill-cd-overlay');
@@ -168,7 +162,6 @@
         let countdownTimerInterval = null; 
         const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
 
-        // Ẩn màn hình loader tùy biến sau 1.5 giây (Yêu cầu 4)
         window.addEventListener('DOMContentLoaded', () => {
             setTimeout(() => {
                 const loader = document.getElementById('custom-loader');
@@ -180,7 +173,6 @@
             }, 1500);
         });
 
-        // Xử lý kiểm tra bắt buộc xoay ngang màn hình (Yêu cầu 6)
         function checkOrientation() {
             const lockView = document.getElementById('landscape-lock');
             if (window.innerHeight > window.innerWidth && window.innerWidth <= 768) {
@@ -263,6 +255,10 @@
         }
         initStarDust();
 
+        function calculateNodeScale(val) {
+            return 1.0 + Math.log2(val || 2) * 0.08;
+        }
+
         function createFireworkCluster(targetX, targetY) {
             const numTia = 60;
             const basicColors = ['#ff0055', '#00ffcc', '#ffcc00', '#ff00ff', '#00ff00', '#00ffff', '#ffffff'];
@@ -285,17 +281,15 @@
             }
         }
 
-        // Thực thi xử lý khi ấn nút tăng tốc x3 (Yêu cầu 3)
         function triggerSpeedSkill() {
             if (!gameRunning || isSkillInCooldown) return;
             socket.emit('activateSpeedSkill');
         }
 
-        // Nhận xác nhận đồng bộ từ server và vẽ hiệu ứng đếm ngược hồi chiêu
         socket.on('speedSkillActivatedConfirmed', () => {
             isSkillInCooldown = true;
-            skillActiveDurationLeft = 7; // Hoạt động 7s
-            skillCooldownTimeLeft = 20;  // Thời gian chờ hồi chiêu 20s
+            skillActiveDurationLeft = 7; 
+            skillCooldownTimeLeft = 20;  
 
             speedBtn.classList.add('cooldown');
             speedLabel.innerText = "RUNNING";
@@ -495,10 +489,16 @@
             ctx.fillStyle = '#030712'; ctx.fillRect(0, 0, width, height);
 
             let me = serverPlayers[socket.id];
+            
+            // SỬA LỖI CAMERA: Đảm bảo nếu chưa nhận được tọa độ từ server, camera sẽ không bị lỗi NaN làm đen màn hình
             let camX = 1800, camY = 1800;
-            if (me && me.body && me.body[0]) { camX = me.body[0].x; camY = me.body[0].y; }
+            if (me && me.body && me.body[0] && typeof me.body[0].x === 'number' && typeof me.body[0].y === 'number') { 
+                camX = me.body[0].x; 
+                camY = me.body[0].y; 
+            }
 
-            ctx.save(); ctx.translate(width / 2 - camX, height / 2 - camY);
+            ctx.save(); 
+            ctx.translate(width / 2 - camX, height / 2 - camY);
 
             ctx.strokeStyle = 'rgba(251,191,36,0.35)'; ctx.lineWidth = 6; ctx.strokeRect(0, 0, 3600, 3600);
             ctx.strokeStyle = 'rgba(31,41,55,0.4)'; ctx.lineWidth = 1;
@@ -566,7 +566,7 @@
             try { audioCtx.resume(); } catch(e) {}
             startScreen.style.display = 'none';
             document.getElementById('ui').style.display = 'block';
-            speedBtn.style.display = 'flex'; // Hiển thị nút skill x3 khi vào trận
+            speedBtn.style.display = 'flex'; 
             
             if (window.innerWidth <= 768) { document.getElementById('toggle-lb-btn').style.display = 'block'; }
             else { document.getElementById('leaderboard').style.display = 'block'; }
@@ -580,16 +580,18 @@
 
         const moveInput = (e) => {
             if(!gameRunning) return;
-            const x = e.touches ? e.touches[0].clientX : e.clientX;
-            const y = e.touches ? e.touches[0].clientY : e.clientY;
-            myAngle = Math.atan2(y - height/2, x - width/2);
+            const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+            const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+            
+            myAngle = Math.atan2(clientY - height/2, clientX - width/2);
+            
+            // SỬA LỖI HIỂN THỊ: Gửi liên tục góc chính xác lên Server ngay khi di chuyển để tránh lệch tọa độ gây mất hình nền
             socket.emit('updateInput', { angle: myAngle });
         };
         
         window.addEventListener('mousemove', moveInput);
         window.addEventListener('touchmove', (e) => { if(gameRunning) e.preventDefault(); moveInput(e); }, {passive:false});
         
-        // Yêu cầu 1: Triệt tiêu mousedown/touchstart liên quan đến tăng tốc dốc đuôi cũ
         window.addEventListener('mousedown', () => {});
         window.addEventListener('mouseup', () => {});
         window.addEventListener('touchstart', () => {});
