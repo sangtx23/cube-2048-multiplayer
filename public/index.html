@@ -13,7 +13,7 @@
         }
         #name-input { padding: 12px; font-size: 18px; border-radius: 25px; border: 2px solid #fbbf24; width: 220px; text-align: center; margin-bottom: 15px; outline: none; background: #1f2937; color: white; }
         #start-btn { padding: 12px 50px; font-size: 18px; background: #fbbf24; color: #000; border: none; border-radius: 25px; cursor: pointer; font-weight: bold; box-shadow: 0 0 15px #fbbf24; }
-        
+
         /* GIAO DIỆN UI THÔNG MINH */
         #ui { position: absolute; top: 12px; left: 12px; color: white; pointer-events: none; z-index: 10; display: none; font-size: 14px; text-shadow: 1px 1px 2px black; max-width: 45%; }
         #ui br { display: none; } 
@@ -30,7 +30,7 @@
         .lb-item { display: flex; justify-content: space-between; font-size: 12px; margin: 4px 0; padding: 2px 4px; border-radius: 4px; }
         .lb-you { background: rgba(251, 191, 36, 0.2); color: #fde047; font-weight: bold; border: 1px dashed #fbbf24; }
         .lb-top1 { color: #facc15; font-weight: bold; }
-        
+
         /* Nút ẩn/hiển thị nhanh bảng xếp hạng dành riêng cho Mobile */
         #toggle-lb-btn {
             display: none; position: absolute; top: 12px; right: 12px; z-index: 96;
@@ -40,7 +40,7 @@
         }
 
         #kill-feed { position: absolute; bottom: 20px; left: 12px; z-index: 10; color: #ef4444; font-weight: bold; font-size: 14px; text-shadow: 0 0 4px black; pointer-events: none; }
-        
+
         /* Dải chữ thông báo Marquee */
         #mega-announcement-container {
             position: absolute; top: 20%; left: 0; width: 100%; overflow: hidden;
@@ -102,7 +102,7 @@
     </div>
 
     <div id="kill-feed"></div>
-    
+
     <div id="mega-announcement-container">
         <div id="mega-announcement"></div>
     </div>
@@ -126,7 +126,7 @@
         let serverPlayers = {}, serverCubes = [], serverItems = [];
         let myAngle = 0, isMouseDown = false;
         let myConfirmedName = "Player";
-        
+
         let starDustParticles = []; 
         let fireworkExplosions = [];
         let floatingTexts = [];
@@ -135,7 +135,7 @@
         let speedCountdownInterval = null;
         let currentSpeedTimeLeft = 0;
         const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-        
+
         function playSound(type, freqValue = 200) {
             try {
                 if (audioCtx.state === 'suspended') audioCtx.resume();
@@ -169,6 +169,7 @@
                 else if (type === 'kill') {
                     osc.type = 'square';
                     osc.frequency.setValueAtTime(400, audioCtx.currentTime);
+                    osc.frequency.setValueAtTime(700, audio
                     osc.frequency.setValueAtTime(700, audioCtx.currentTime + 0.12);
                     gainNode.gain.setValueAtTime(0.25, audioCtx.currentTime);
                     gainNode.gain.linearRampToValueAtTime(0.01, audioCtx.currentTime + 0.25);
